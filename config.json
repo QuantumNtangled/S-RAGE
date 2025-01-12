@@ -1,7 +1,7 @@
 {
-    "api_endpoint": "http://your-rag-endpoint/api/chat",
+    "api_endpoint": "your-endpoint",
     "api_key": "your-api-key",
-    "auth_type": "bearer",
+    "auth_type": "direct",
     "request_config": {
         "use_context": true,
         "temperature": 0,
@@ -16,7 +16,7 @@
         "is_array": false
     },
     "chunks_mapping": {
-        "path": ["choices", 0, "context"],
+        "path": ["choices", 0, "sources"],
         "is_array": true,
         "text_field": "text"
     },

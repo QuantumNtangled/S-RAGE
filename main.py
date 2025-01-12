@@ -131,10 +131,13 @@ class RAGEvaluator:
             chunks = []
             text_field = self.config.chunks_mapping['text_field']
             for chunk in chunks_data:
-                if isinstance(chunk, dict) and text_field in chunk:
-                    chunks.append(chunk[text_field])
-                else:
-                    raise ValueError(f"Chunk missing required field: {text_field}")
+                if isinstance(chunk, dict):
+                    # Handle nested document structure
+                    if 'document' in chunk and 'doc_metadata' in chunk['document']:
+                        chunks.append(chunk['document']['doc_metadata'].get('window', ''))
+                    else:
+                        chunks.append(chunk.get(text_field, ''))
+        
         except (KeyError, IndexError, ValueError) as e:
             raise ValueError(f"Failed to extract chunks using mapping: {str(e)}")
 
