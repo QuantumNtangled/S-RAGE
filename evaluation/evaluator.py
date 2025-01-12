@@ -1,7 +1,10 @@
 from typing import List, Dict
 import json
 import asyncio
-from .metrics import RAGEvaluator
+try:
+    from .metrics import RAGEvaluator  # Try relative import first
+except ImportError:
+    from evaluation.metrics import RAGEvaluator  # Fall back to absolute import
 
 class EvaluationManager:
     def __init__(self, db_connection, llm_provider):
