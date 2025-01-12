@@ -18,7 +18,32 @@ config = load_config('config.json')
 llm_provider = LLMProvider()
 
 # Database configuration
-DATABASE = 'rag_evaluation.db'  # Update this to match your database path
+DATABASE = 'rag_evaluator.db'  # Make sure this matches the name in main.py
+
+def init_db():
+    with app.app_context():
+        db = get_db()
+        # Create tables
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS ground_truth (
+                id INTEGER PRIMARY KEY,
+                question TEXT NOT NULL,
+                answer TEXT NOT NULL
+            )
+        """)
+        
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS rag_responses (
+                id INTEGER PRIMARY KEY,
+                ground_truth_id INTEGER,
+                response TEXT NOT NULL,
+                chunks TEXT,
+                evaluation TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (ground_truth_id) REFERENCES ground_truth (id)
+            )
+        """)
+        db.commit()
 
 def get_db():
     if 'db' not in g:
@@ -86,6 +111,9 @@ async def evaluate_response(ground_truth_id):
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# Initialize database before running the app
+init_db()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True) 
