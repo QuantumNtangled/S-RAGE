@@ -1,0 +1,15 @@
+{
+    "default_provider": "azure",
+    
+    "azure": {
+        "model": "gpt-4o-mini"
+    },
+    
+    "openai": {
+        "model": "gpt-4o-mini"
+    },
+    
+    "bedrock": {
+        "model_id": "anthropic.claude-v2"
+    }
+} 

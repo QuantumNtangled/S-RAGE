@@ -1,0 +1,14 @@
+{
+    "api_endpoint": "http://localhost:8000/v1/chat/completions",
+    "api_key": null,
+    "response_mapping": {
+        "path": ["choices", 0, "message", "content"],
+        "is_array": false
+    },
+    "chunks_mapping": {
+        "path": ["choices", 0, "sources"],
+        "is_array": true,
+        "text_field": "text"
+    },
+    "ground_truth_path": "data/ground_truth.csv"
+}
