@@ -2,11 +2,14 @@
     "default_provider": "azure",
     
     "azure": {
-        "model": "gpt-4o-mini"
+        "model": "gpt-4o-mini",
+        "deployment_name": "${AZURE_DEPLOYMENT_NAME}",
+        "model_version": "0613"
     },
     
     "openai": {
-        "model": "gpt-4o-mini"
+        "model": "gpt-4o-mini",
+        "model_version": "0613"
     },
     
     "bedrock": {

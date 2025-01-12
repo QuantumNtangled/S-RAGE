@@ -31,7 +31,9 @@ class LLMProvider:
         azure_api_key = os.getenv("AZURE_API_KEY")
         azure_api_version = os.getenv("AZURE_API_VERSION")
         self.deployment_name = os.getenv("AZURE_DEPLOYMENT_NAME")
-        self.embedding_deployment = os.getenv("AZURE_EMBEDDING_DEPLOYMENT", "text-embedding-ada-002")
+        self.model_name = os.getenv("AZURE_MODEL_NAME", "gpt-4")
+        self.model_version = os.getenv("AZURE_MODEL_VERSION", "0613")
+        self.embedding_deployment = os.getenv("AZURE_EMBEDDING_DEPLOYMENT")
         
         if not all([azure_endpoint, azure_api_key, azure_api_version, self.deployment_name]):
             raise ValueError("Missing required Azure OpenAI configuration in environment variables")
@@ -44,19 +46,21 @@ class LLMProvider:
 
     def _setup_openai(self):
         openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.model_name = os.getenv("OPENAI_MODEL_NAME", "gpt-4")
+        self.model_version = os.getenv("OPENAI_MODEL_VERSION", "0613")
+        
         if not openai_api_key:
             raise ValueError("Missing OpenAI API key in environment variables")
             
         self.client = OpenAI(
             api_key=openai_api_key
         )
-        self.model = self.config["openai"]["model"]
-        self.embedding_model = "text-embedding-3-small"
 
     def _setup_bedrock(self):
         aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
         aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
         aws_region = os.getenv("AWS_REGION")
+        self.model_id = os.getenv("AWS_MODEL_ID", "anthropic.claude-v2")
         
         if not all([aws_access_key, aws_secret_key, aws_region]):
             raise ValueError("Missing required AWS credentials in environment variables")
@@ -67,7 +71,6 @@ class LLMProvider:
             aws_secret_access_key=aws_secret_key,
             region_name=aws_region
         )
-        self.model_id = self.config["bedrock"]["model_id"]
 
     async def _azure_completion(self, messages: list) -> str:
         response = self.client.chat.completions.create(
