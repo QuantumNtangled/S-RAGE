@@ -1,38 +1,33 @@
-from flask import Flask, jsonify, request, send_from_directory
-import os
-from main import RAGEvaluator, load_config
+from flask import Flask, jsonify, request
 from evaluation.evaluator import EvaluationManager
 from evaluation.llm_provider import LLMProvider
+from main import RAGEvaluator, load_config, Database
+import os
 from dotenv import load_dotenv
 
-app = Flask(__name__, static_folder='static')
-config = load_config('config.json')
-evaluator = RAGEvaluator(config)
+app = Flask(__name__)
 
 # Load environment variables
 load_dotenv()
+
+# Load configuration
+config = load_config('config.json')
+
+# Initialize database
+db = Database()
 
 # Initialize the LLM provider
 llm_provider = LLMProvider()
 
 # Initialize evaluator
 evaluator = EvaluationManager(
-    db_connection=evaluator.db,
+    db_connection=db.conn,  # Use the connection from the Database object
     llm_provider=llm_provider
 )
 
-@app.route('/')
-def index():
-    return send_from_directory('static', 'index.html')
-
-@app.route('/api/process', methods=['POST'])
-def process_questions():
-    evaluator.process_ground_truth()
-    return jsonify({"status": "success"})
-
 @app.route('/api/results', methods=['GET'])
 def get_results():
-    cursor = evaluator.db.cursor()
+    cursor = evaluator.db.cursor()  # Now this should work
     cursor.execute("""
         SELECT
             gt.question,
@@ -68,4 +63,4 @@ async def evaluate_response(ground_truth_id):
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True) 
+    app.run(debug=True) 
