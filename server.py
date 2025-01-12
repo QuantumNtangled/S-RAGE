@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template, send_from_directory
 from evaluation.evaluator import EvaluationManager
 from evaluation.llm_provider import LLMProvider
 from main import RAGEvaluator, load_config, Database
@@ -21,13 +21,21 @@ llm_provider = LLMProvider()
 
 # Initialize evaluator
 evaluator = EvaluationManager(
-    db_connection=db.conn,  # Use the connection from the Database object
+    db_connection=db.conn,
     llm_provider=llm_provider
 )
 
+@app.route('/')
+def index():
+    return send_from_directory('static', 'index.html')
+
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
+
 @app.route('/api/results', methods=['GET'])
 def get_results():
-    cursor = evaluator.db.cursor()  # Now this should work
+    cursor = evaluator.db.cursor()
     cursor.execute("""
         SELECT
             gt.question,
@@ -63,4 +71,4 @@ async def evaluate_response(ground_truth_id):
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(host='0.0.0.0', port=5000, debug=True) 
