@@ -62,10 +62,20 @@ class RAGEvaluator:
             self.db.conn.commit()
     
     def call_rag_api(self, question: str) -> dict:
-        headers = {}
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        
+        # Handle API key based on config
         if self.config.api_key:
-            headers['Authorization'] = f'Bearer {self.config.api_key}'
-            headers['Content-Type'] = 'application/json'
+            # Try different common authorization header formats
+            if self.config.get('auth_type', 'bearer').lower() == 'bearer':
+                headers['Authorization'] = f'Bearer {self.config.api_key}'
+            elif self.config.get('auth_type') == 'api-key':
+                headers['x-api-key'] = self.config.api_key
+            else:
+                # Direct API key in header
+                headers['api-key'] = self.config.api_key
         
         # Start with additional params from config
         payload = self.config.request_config.get('additional_params', {})
@@ -83,6 +93,7 @@ class RAGEvaluator:
                 payload[key] = value
         
         try:
+            print(f"Calling RAG API with headers: {headers}")  # Debug print
             response = requests.post(
                 self.config.api_endpoint,
                 headers=headers,
@@ -93,6 +104,7 @@ class RAGEvaluator:
             return response.json()
         except requests.exceptions.RequestException as e:
             print(f"Error calling RAG API: {str(e)}")
+            print(f"Response content: {e.response.content if hasattr(e, 'response') else 'No response content'}")
             raise
 
     def extract_response_and_chunks(self, api_response: dict) -> tuple[str, List[str]]:

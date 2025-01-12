@@ -1,6 +1,7 @@
 {
     "api_endpoint": "http://your-rag-endpoint/api/chat",
     "api_key": "your-api-key",
+    "auth_type": "bearer",
     "request_config": {
         "use_context": true,
         "temperature": 0,
