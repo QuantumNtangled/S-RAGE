@@ -47,8 +47,11 @@ class RAGEvaluator:
         self.db = Database()
     
     def load_ground_truth(self):
-        with open(self.config.ground_truth_path, 'r') as f:
+        with open(self.config.ground_truth_path, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
+            # Print column names for debugging
+            print("CSV Columns:", reader.fieldnames)
+            
             cursor = self.db.conn.cursor()
             for row in reader:
                 cursor.execute(
