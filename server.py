@@ -14,11 +14,11 @@ load_dotenv()
 # Load configuration
 config = load_config('config.json')
 
-# Initialize the LLM provider
-llm_provider = LLMProvider()
+# Initialize the LLM provider with the full config
+llm_provider = LLMProvider(config_path='llm.config.json')  # Make sure this points to your LLM config file
 
 # Database configuration
-DATABASE = 'rag_evaluator.db'  # Make sure this matches the name in main.py
+DATABASE = 'rag_evaluator.db'
 
 def init_db():
     with app.app_context():
