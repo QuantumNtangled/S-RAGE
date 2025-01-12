@@ -1,9 +1,10 @@
-from flask import Flask, jsonify, request, render_template, send_from_directory
+from flask import Flask, jsonify, request, render_template, send_from_directory, g
 from evaluation.evaluator import EvaluationManager
 from evaluation.llm_provider import LLMProvider
 from main import RAGEvaluator, load_config, Database
 import os
 from dotenv import load_dotenv
+import sqlite3
 
 app = Flask(__name__)
 
@@ -13,15 +14,27 @@ load_dotenv()
 # Load configuration
 config = load_config('config.json')
 
-# Initialize database
-db = Database()
-
 # Initialize the LLM provider
 llm_provider = LLMProvider()
 
-# Initialize evaluator
+# Database configuration
+DATABASE = 'rag_evaluation.db'  # Update this to match your database path
+
+def get_db():
+    if 'db' not in g:
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row
+    return g.db
+
+@app.teardown_appcontext
+def close_db(error):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
+# Initialize evaluator with a function to get the database connection
 evaluator = EvaluationManager(
-    db_connection=db.conn,
+    db_connection=get_db(),
     llm_provider=llm_provider
 )
 
@@ -35,7 +48,8 @@ def serve_static(path):
 
 @app.route('/api/results', methods=['GET'])
 def get_results():
-    cursor = evaluator.db.cursor()
+    db = get_db()
+    cursor = db.cursor()
     cursor.execute("""
         SELECT
             gt.question,
@@ -65,6 +79,8 @@ def get_results():
 @app.route('/api/evaluate/<int:ground_truth_id>', methods=['POST'])
 async def evaluate_response(ground_truth_id):
     try:
+        db = get_db()
+        evaluator.db = db  # Update the evaluator's database connection
         results = await evaluator.evaluate_response(ground_truth_id)
         return jsonify(results)
     except Exception as e:
