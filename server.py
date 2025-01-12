@@ -15,7 +15,7 @@ load_dotenv()
 # Initialize the LLM provider
 llm_provider = LLMProvider()
 
-# Update evaluator initialization
+# Initialize evaluator
 evaluator = EvaluationManager(
     db_connection=evaluator.db,
     llm_provider=llm_provider

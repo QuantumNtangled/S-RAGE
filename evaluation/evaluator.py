@@ -4,9 +4,9 @@ import asyncio
 from .metrics import RAGEvaluator
 
 class EvaluationManager:
-    def __init__(self, db_connection, openai_api_key: str):
+    def __init__(self, db_connection, llm_provider):
         self.db = db_connection
-        self.evaluator = RAGEvaluator(openai_api_key)
+        self.evaluator = RAGEvaluator(llm_provider=llm_provider)
     
     async def evaluate_response(self, ground_truth_id: int) -> Dict:
         cursor = self.db.cursor()
@@ -25,16 +25,16 @@ class EvaluationManager:
         
         row = cursor.fetchone()
         if not row:
-            return {"error": "Response not found"}
+            raise ValueError(f"No response found for ground truth ID {ground_truth_id}")
             
-        question, ground_truth, response, chunks_json = row
-        chunks = json.loads(chunks_json)
+        question, ground_truth, response, chunks = row
+        chunks_list = json.loads(chunks) if chunks else []
         
-        # Calculate metrics
+        # Evaluate response
         results = {
             "response_metrics": {
-                "cosine_similarity": self.evaluator.calculate_cosine_similarity(
-                    ground_truth, response
+                "cosine_similarity": await self.evaluator.calculate_cosine_similarity(
+                    response, ground_truth
                 ),
                 "rouge_scores": self.evaluator.calculate_rouge_scores(
                     response, ground_truth
@@ -47,10 +47,9 @@ class EvaluationManager:
         }
         
         # Evaluate each chunk
-        for chunk in chunks:
+        for chunk in chunks_list:
             chunk_eval = {
-                "chunk": chunk,
-                "cosine_similarity": self.evaluator.calculate_cosine_similarity(
+                "cosine_similarity": await self.evaluator.calculate_cosine_similarity(
                     ground_truth, chunk
                 ),
                 "rouge_scores": self.evaluator.calculate_rouge_scores(
