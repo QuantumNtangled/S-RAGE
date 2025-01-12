@@ -14,11 +14,11 @@ load_dotenv()
 # Load configuration
 config = load_config('config.json')
 
-# Initialize the LLM provider with the full config
-llm_provider = LLMProvider(config_path='llm.config.json')  # Make sure this points to your LLM config file
+# Initialize the LLM provider
+llm_provider = LLMProvider()  # Remove the auth_type parameter
 
 # Database configuration
-DATABASE = 'rag_evaluator.db'
+DATABASE = 'rag_evaluator.db'  # Update this to match your database path
 
 def init_db():
     with app.app_context():
