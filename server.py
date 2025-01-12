@@ -3,18 +3,22 @@ import os
 from main import RAGEvaluator, load_config
 from evaluation.evaluator import EvaluationManager
 from evaluation.llm_provider import LLMProvider
+from dotenv import load_dotenv
 
 app = Flask(__name__, static_folder='static')
 config = load_config('config.json')
 evaluator = RAGEvaluator(config)
+
+# Load environment variables
+load_dotenv()
 
 # Initialize the LLM provider
 llm_provider = LLMProvider()
 
 # Update evaluator initialization
 evaluator = EvaluationManager(
-    evaluator.db.conn,
-    llm_provider
+    db_connection=evaluator.db,
+    llm_provider=llm_provider
 )
 
 @app.route('/')
@@ -28,17 +32,18 @@ def process_questions():
 
 @app.route('/api/results', methods=['GET'])
 def get_results():
-    cursor = evaluator.db.conn.cursor()
+    cursor = evaluator.db.cursor()
     cursor.execute("""
-        SELECT 
+        SELECT
             gt.question,
             gt.answer,
             rr.response,
             rr.chunks,
+            rr.evaluation,
             rr.timestamp
         FROM ground_truth gt
         LEFT JOIN rag_responses rr ON gt.id = rr.ground_truth_id
-        ORDER BY gt.id
+        ORDER BY gt.id DESC
     """)
     
     results = []
@@ -48,7 +53,8 @@ def get_results():
             "ground_truth": row[1],
             "response": row[2],
             "chunks": row[3],
-            "timestamp": row[4]
+            "evaluation": row[4],
+            "timestamp": row[5]
         })
     
     return jsonify(results)
