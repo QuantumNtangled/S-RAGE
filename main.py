@@ -154,7 +154,11 @@ class RAGEvaluator:
             try:
                 # Call RAG API and extract response/chunks
                 api_response = self.call_rag_api(question)
+                print(f"\nAPI Response: {json.dumps(api_response, indent=2)}")  # Debug print
+                
                 response, chunks = self.extract_response_and_chunks(api_response)
+                print(f"\nExtracted Response: {response}")  # Debug print
+                print(f"Extracted Chunks: {json.dumps(chunks, indent=2)}")  # Debug print
                 
                 # Store the results
                 cursor.execute(
@@ -166,6 +170,16 @@ class RAGEvaluator:
                     (gt_id, response, json.dumps(chunks))
                 )
                 self.db.conn.commit()
+                
+                # Verify storage
+                cursor.execute("""
+                    SELECT response, chunks 
+                    FROM rag_responses 
+                    WHERE ground_truth_id = ?
+                """, (gt_id,))
+                stored_data = cursor.fetchone()
+                print(f"\nStored in DB - Response: {stored_data[0]}")
+                print(f"Stored in DB - Chunks: {stored_data[1]}")
                 
                 print(f"Processed question {gt_id}: {question[:50]}...")
                 
