@@ -10,6 +10,7 @@ import os
 class Config:
     api_endpoint: str
     api_key: Optional[str]
+    auth_type: Optional[str]  # Add this line
     response_mapping: dict  # Defines how to extract response from API JSON
     chunks_mapping: dict   # Defines how to extract chunks from API JSON
     ground_truth_path: str
@@ -65,18 +66,35 @@ class RAGEvaluator:
         headers = {}
         if self.config.api_key:
             headers['Authorization'] = f'Bearer {self.config.api_key}'
+            headers['Content-Type'] = 'application/json'
         
-        payload = {
-            "messages": [{"role": "user", "content": question}],
-            "stream": False
-        }
+        # Start with additional params from config
+        payload = self.config.request_config.get('additional_params', {})
         
-        response = requests.post(
-            self.config.api_endpoint,
-            headers=headers,
-            json=payload
-        )
-        return response.json()
+        # Add messages
+        messages = []
+        if system_message := self.config.request_config.get('system_message'):
+            messages.append({"role": "system", "content": system_message})
+        messages.append({"role": "user", "content": question})
+        payload["messages"] = messages
+        
+        # Add other configured parameters
+        for key, value in self.config.request_config.items():
+            if key not in ['system_message', 'additional_params']:
+                payload[key] = value
+        
+        try:
+            response = requests.post(
+                self.config.api_endpoint,
+                headers=headers,
+                json=payload,
+                timeout=30
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error calling RAG API: {str(e)}")
+            raise
 
     def extract_response_and_chunks(self, api_response: dict) -> tuple[str, List[str]]:
         def get_nested_value(data: dict, path: List[str | int]) -> any:
