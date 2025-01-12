@@ -26,17 +26,19 @@ def get_db():
         g.db.row_factory = sqlite3.Row
     return g.db
 
+def get_evaluator():
+    if 'evaluator' not in g:
+        g.evaluator = EvaluationManager(
+            db_connection=get_db(),
+            llm_provider=llm_provider
+        )
+    return g.evaluator
+
 @app.teardown_appcontext
 def close_db(error):
     db = g.pop('db', None)
     if db is not None:
         db.close()
-
-# Initialize evaluator with a function to get the database connection
-evaluator = EvaluationManager(
-    db_connection=get_db(),
-    llm_provider=llm_provider
-)
 
 @app.route('/')
 def index():
@@ -79,8 +81,7 @@ def get_results():
 @app.route('/api/evaluate/<int:ground_truth_id>', methods=['POST'])
 async def evaluate_response(ground_truth_id):
     try:
-        db = get_db()
-        evaluator.db = db  # Update the evaluator's database connection
+        evaluator = get_evaluator()
         results = await evaluator.evaluate_response(ground_truth_id)
         return jsonify(results)
     except Exception as e:
