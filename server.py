@@ -5,6 +5,7 @@ from main import RAGEvaluator, load_config, Database
 import os
 from dotenv import load_dotenv
 import sqlite3
+import json
 
 app = Flask(__name__)
 
@@ -92,12 +93,16 @@ def get_results():
     
     results = []
     for row in cursor.fetchall():
+        # Add debug printing
+        print(f"Chunks from DB: {row[3]}")
+        print(f"Evaluation from DB: {row[4]}")
+        
         results.append({
             "question": row[0],
             "ground_truth": row[1],
             "response": row[2],
-            "chunks": row[3],
-            "evaluation": row[4],
+            "chunks": json.loads(row[3]) if row[3] else [],  # Ensure chunks are parsed from JSON
+            "evaluation": json.loads(row[4]) if row[4] else None,  # Ensure evaluation is parsed from JSON
             "timestamp": row[5]
         })
     
@@ -106,10 +111,24 @@ def get_results():
 @app.route('/api/evaluate/<int:ground_truth_id>', methods=['POST'])
 async def evaluate_response(ground_truth_id):
     try:
+        print(f"Starting evaluation for ground_truth_id: {ground_truth_id}")
         evaluator = get_evaluator()
         results = await evaluator.evaluate_response(ground_truth_id)
+        print(f"Evaluation results: {results}")
+        
+        # Store evaluation results in database
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("""
+            UPDATE rag_responses 
+            SET evaluation = ? 
+            WHERE ground_truth_id = ?
+        """, (json.dumps(results), ground_truth_id))
+        db.commit()
+        
         return jsonify(results)
     except Exception as e:
+        print(f"Error in evaluation: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 # Initialize database before running the app
