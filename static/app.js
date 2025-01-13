@@ -60,11 +60,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <h5>Consistency: ${responseEval.consistency}</h5>
                                                 <h5>Fluency: ${responseEval.fluency}</h5>
                                                 <h5>Cosine Similarity: ${responseEval.cosine_similarity}</h5>
-                                                <div class="rouge-scores">
-                                                    <h5>ROUGE Scores:</h5>
-                                                    <p>ROUGE-1: ${responseEval.rouge_scores.rouge1}</p>
-                                                    <p>ROUGE-2: ${responseEval.rouge_scores.rouge2}</p>
-                                                    <p>ROUGE-L: ${responseEval.rouge_scores.rougeL}</p>
+                                                <div class="scores">
+                                                    <h5>BERT Scores:</h5>
+                                                    <p>Precision: ${responseEval.scores.precision}</p>
+                                                    <p>Recall: ${responseEval.scores.recall}</p>
+                                                    <p>F1: ${responseEval.scores.f1}</p>
                                                 </div>
                                             </div>
                                             <div class="metric-card">
@@ -80,11 +80,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                                         <h5>Chunk ${index + 1}</h5>
                                                         <p>Cosine Similarity: ${chunkEval.cosine_similarity}</p>
                                                         <p>Completeness: ${chunkEval.completeness}</p>
-                                                        <div class="rouge-scores">
-                                                            <h5>ROUGE Scores:</h5>
-                                                            <p>ROUGE-1: ${chunkEval.rouge_scores.rouge1}</p>
-                                                            <p>ROUGE-2: ${chunkEval.rouge_scores.rouge2}</p>
-                                                            <p>ROUGE-L: ${chunkEval.rouge_scores.rougeL}</p>
+                                                        <div class="scores">
+                                                            <h5>BERT Scores:</h5>
+                                                            <p>Precision: ${chunkEval.scores.precision}</p>
+                                                            <p>Recall: ${chunkEval.scores.recall}</p>
+                                                            <p>F1: ${chunkEval.scores.f1}</p>
                                                         </div>
                                                     </div>
                                                 `).join('')}

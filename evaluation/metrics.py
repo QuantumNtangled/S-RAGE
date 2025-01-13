@@ -231,11 +231,5 @@ Chunk: {chunk}"""}
             return {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
 
     def calculate_scores(self, candidate: str, reference: str) -> Dict:
-        """Calculate both ROUGE and BERT scores."""
-        rouge_scores = self.calculate_rouge_scores(candidate, reference)
-        bert_scores = self.calculate_bert_score(candidate, reference)
-        
-        return {
-            'rouge_scores': rouge_scores,
-            'bert_scores': bert_scores
-        }
+        """Calculate BERT scores."""
+        return self.calculate_bert_score(candidate, reference)
