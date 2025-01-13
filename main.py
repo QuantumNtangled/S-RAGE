@@ -84,12 +84,15 @@ class Database:
             # Clean the text data
             df['answer'] = df['answer'].apply(self.clean_text)
             
-            # Verify data after cleaning
-            print(f"\nProcessed {len(df)} valid ground truth entries")
-            print("\nSample of cleaned data:")
+            # Remove any empty answers after cleaning
+            df = df[df['answer'].str.len() > 0]
+            
+            print(f"Processed {len(df)} valid ground truth entries")
+            
+            # Show sample of cleaned data
+            print("\nSample of cleaned ground truth data:")
             sample = df.iloc[0]
-            print(f"Question: {sample['question'][:100]}...")
-            print(f"Answer: {sample['answer'][:100]}...")
+            print(f"Answer (first 100 chars): {sample['answer'][:100]}...")
             
             # Store in database
             cursor = self.conn.cursor()
@@ -104,7 +107,6 @@ class Database:
             
         except Exception as e:
             print(f"Error loading ground truth data: {str(e)}")
-            print(f"Current working directory: {os.getcwd()}")
             return []
 
 class RAGEvaluator:
@@ -132,12 +134,14 @@ class RAGEvaluator:
             'Authorization': self.config.api_key
         }
         
-        # Simplified system message
-        system_message = """You are a helpful AI assistant that provides clear, accurate responses based on the given context. 
-        
+        # Updated system message to encourage thorough responses
+        system_message = """You are a helpful AI assistant that provides clear, accurate, and thorough responses based on the given context. 
+
 Important Instructions:
 1. Use ONLY the provided context to answer the question
-2. Do NOT use markdown formatting in your response"""
+2. Do NOT use markdown formatting in your response
+3. Be comprehensive and detailed in your explanation
+4. Cover all relevant aspects from the context"""
         
         # Build the payload exactly as expected
         payload = {
@@ -222,12 +226,13 @@ Important Instructions:
         for gt_id, question in ground_truth_entries:
             try:
                 # Call RAG API and extract response/chunks
+                print(f"\nProcessing question {gt_id}: {question[:50]}...")
                 api_response = self.call_rag_api(question)
-                print(f"\nAPI Response: {json.dumps(api_response, indent=2)}")  # Debug print
+                print(f"\nAPI Response received for question {gt_id}")
                 
                 response, chunks = self.extract_response_and_chunks(api_response)
-                print(f"\nExtracted Response: {response}")  # Debug print
-                print(f"Extracted Chunks: {json.dumps(chunks, indent=2)}")  # Debug print
+                print(f"Response extracted (first 100 chars): {response[:100]}...")
+                print(f"Number of chunks: {len(chunks)}")
                 
                 # Store the results
                 cursor.execute(
@@ -240,17 +245,7 @@ Important Instructions:
                 )
                 self.db.conn.commit()
                 
-                # Verify storage
-                cursor.execute("""
-                    SELECT response, chunks 
-                    FROM rag_responses 
-                    WHERE ground_truth_id = ?
-                """, (gt_id,))
-                stored_data = cursor.fetchone()
-                print(f"\nStored in DB - Response: {stored_data[0]}")
-                print(f"Stored in DB - Chunks: {stored_data[1]}")
-                
-                print(f"Processed question {gt_id}: {question[:50]}...")
+                print(f"Stored response for question {gt_id}")
                 
             except Exception as e:
                 print(f"Error processing question {gt_id}: {str(e)}")
