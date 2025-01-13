@@ -8,10 +8,25 @@ from evaluation.llm_provider import LLMProvider
 import os
 from dotenv import load_dotenv
 class RAGEvaluator:
-    def __init__(self, llm_provider):
-        self.llm_provider = llm_provider
+
+    def __init__(self, llm_provider: LLMProvider, embedding_provider: str = "azure"):
+        load_dotenv()
+        self.rouge = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
+        self.llm = llm_provider
         self.rouge_scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
         self.vectorizer = TfidfVectorizer()
+        # Setup embedding model based on provider
+        if embedding_provider == "azure":
+            self.embedding_model = os.getenv("AZURE_EMBEDDING_DEPLOYMENT")
+        elif embedding_provider == "openai":
+            self.embedding_model = os.getenv("OPENAI_EMBEDDING_MODEL")
+        elif embedding_provider == "sbert":
+            sbert_model_name = os.getenv("SBERT_MODEL_NAME")
+            self.model = SentenceTransformer(sbert_model_name)
+        else:
+            raise ValueError(f"Unsupported embedding provider: {embedding_provider}")
+        
+        self.embedding_provider = embedding_provider
 
     def calculate_relevance(self, question: str, response: str) -> float:
         """Calculate how relevant the response is to the question."""
@@ -20,7 +35,7 @@ class RAGEvaluator:
         Response: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm_provider.get_completion(prompt).strip())
+        score = float(self.llm.get_completion(prompt).strip())
         return min(max(score, 0), 1)  # Ensure score is between 0 and 1
 
     def calculate_completeness(self, ground_truth: str, response: str) -> float:
@@ -30,7 +45,7 @@ class RAGEvaluator:
         Response: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm_provider.get_completion(prompt).strip())
+        score = float(self.llm.get_completion(prompt).strip())
         return min(max(score, 0), 1)
 
     def calculate_consistency(self, ground_truth: str, response: str) -> float:
@@ -40,7 +55,7 @@ class RAGEvaluator:
         Response: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm_provider.get_completion(prompt).strip())
+        score = float(self.llm.get_completion(prompt).strip())
         return min(max(score, 0), 1)
 
     def calculate_fluency(self, response: str) -> float:
@@ -49,7 +64,7 @@ class RAGEvaluator:
         Text: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm_provider.get_completion(prompt).strip())
+        score = float(self.llm.get_completion(prompt).strip())
         return min(max(score, 0), 1)
 
     def calculate_rouge_scores(self, candidate: str, reference: str) -> Dict:
@@ -77,7 +92,7 @@ class RAGEvaluator:
         Chunk: {chunk}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm_provider.get_completion(prompt).strip())
+        score = float(self.llm.get_completion(prompt).strip())
         return min(max(score, 0), 1)
 
     def evaluate_response_with_ai(self, question: str, ground_truth: str, response: str) -> str:
@@ -93,26 +108,9 @@ class RAGEvaluator:
         3. Relevance
         Keep the evaluation concise."""
         
-        return self.llm_provider.get_completion(prompt).strip
+        return self.llm.get_completion(prompt).strip()
     
-class RAGEvaluator:
-    def __init__(self, llm_provider: LLMProvider, embedding_provider: str = "azure"):
-        load_dotenv()
-        self.rouge = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
-        self.llm = llm_provider
-        
-        # Setup embedding model based on provider
-        if embedding_provider == "azure":
-            self.embedding_model = os.getenv("AZURE_EMBEDDING_DEPLOYMENT")
-        elif embedding_provider == "openai":
-            self.embedding_model = os.getenv("OPENAI_EMBEDDING_MODEL")
-        elif embedding_provider == "sbert":
-            sbert_model_name = os.getenv("SBERT_MODEL_NAME")
-            self.model = SentenceTransformer(sbert_model_name)
-        else:
-            raise ValueError(f"Unsupported embedding provider: {embedding_provider}")
-        
-        self.embedding_provider = embedding_provider
+    
         
     async def get_embedding(self, text: str) -> np.ndarray:
         if self.embedding_provider == "sbert":
@@ -206,4 +204,4 @@ Chunk: {chunk}"""}
             score = int(await self.llm.generate_completion(messages))
             return score
         except ValueError:
-            return 0 
+            return 0
