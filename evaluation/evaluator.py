@@ -73,6 +73,9 @@ class EvaluationManager:
                     "chunk": chunk,
                     "semantic_similarity": self.evaluator.calculate_semantic_similarity(
                         ground_truth, chunk
+                    ),
+                    "completeness": await self.evaluator.evaluate_chunk_completeness(
+                        chunk, ground_truth
                     )
                 }
                 results["chunks_evaluation"].append(chunk_eval)
