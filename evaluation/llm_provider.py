@@ -111,11 +111,16 @@ class LLMProvider:
         for msg in messages:
             formatted_messages.append({
                 "role": msg["role"],
-                "content": msg["content"]
+                "content": [
+                    {
+                        "type": "text",
+                        "text": msg["content"]
+                    }
+                ]
             })
         
         try:
-            print(f"Sending formatted messages to Azure: {formatted_messages}")
+            print(f"Sending formatted messages to Azure: {formatted_messages}")  # Debug print
             response = self.client.chat.completions.create(
                 model=self.deployment_name,
                 messages=formatted_messages,
@@ -125,7 +130,7 @@ class LLMProvider:
             return response.choices[0].message.content.strip()
         except Exception as e:
             print(f"Azure completion error: {str(e)}")
-            print(f"Full error details: {e.__dict__}")
+            print(f"Full error details: {e.__dict__}")  # Debug print
             raise
 
     async def _openai_completion(self, messages: list) -> str:
