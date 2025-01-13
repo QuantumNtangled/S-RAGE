@@ -1,12 +1,100 @@
 from typing import List, Dict
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from rouge_score import rouge_scorer
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sentence_transformers import SentenceTransformer
 from evaluation.llm_provider import LLMProvider
 import os
 from dotenv import load_dotenv
+class RAGEvaluator:
+    def __init__(self, llm_provider):
+        self.llm_provider = llm_provider
+        self.rouge_scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
+        self.vectorizer = TfidfVectorizer()
 
+    def calculate_relevance(self, question: str, response: str) -> float:
+        """Calculate how relevant the response is to the question."""
+        prompt = f"""Rate the relevance of this response to the question on a scale of 0 to 1:
+        Question: {question}
+        Response: {response}
+        Only return the numerical score, nothing else."""
+        
+        score = float(self.llm_provider.get_completion(prompt).strip())
+        return min(max(score, 0), 1)  # Ensure score is between 0 and 1
+
+    def calculate_completeness(self, ground_truth: str, response: str) -> float:
+        """Calculate how complete the response is compared to ground truth."""
+        prompt = f"""Rate the completeness of this response compared to the ground truth on a scale of 0 to 1:
+        Ground Truth: {ground_truth}
+        Response: {response}
+        Only return the numerical score, nothing else."""
+        
+        score = float(self.llm_provider.get_completion(prompt).strip())
+        return min(max(score, 0), 1)
+
+    def calculate_consistency(self, ground_truth: str, response: str) -> float:
+        """Calculate how consistent the response is with the ground truth."""
+        prompt = f"""Rate the consistency of this response with the ground truth on a scale of 0 to 1:
+        Ground Truth: {ground_truth}
+        Response: {response}
+        Only return the numerical score, nothing else."""
+        
+        score = float(self.llm_provider.get_completion(prompt).strip())
+        return min(max(score, 0), 1)
+
+    def calculate_fluency(self, response: str) -> float:
+        """Calculate the fluency of the response."""
+        prompt = f"""Rate the fluency of this text on a scale of 0 to 1:
+        Text: {response}
+        Only return the numerical score, nothing else."""
+        
+        score = float(self.llm_provider.get_completion(prompt).strip())
+        return min(max(score, 0), 1)
+
+    def calculate_rouge_scores(self, candidate: str, reference: str) -> Dict:
+        """Calculate ROUGE scores between candidate and reference texts."""
+        scores = self.rouge_scorer.score(reference, candidate)
+        return {
+            'rouge1': scores['rouge1'].fmeasure,
+            'rouge2': scores['rouge2'].fmeasure,
+            'rougeL': scores['rougeL'].fmeasure
+        }
+
+    def calculate_cosine_similarity(self, text1: str, text2: str) -> float:
+        """Calculate cosine similarity between two texts."""
+        try:
+            tfidf_matrix = self.vectorizer.fit_transform([text1, text2])
+            return float(cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0])
+        except Exception as e:
+            print(f"Error calculating cosine similarity: {str(e)}")
+            return 0.0
+
+    def evaluate_chunk_completeness(self, chunk: str, ground_truth: str) -> float:
+        """Evaluate how complete a chunk is compared to ground truth."""
+        prompt = f"""Rate how much of the ground truth information is contained in this chunk on a scale of 0 to 1:
+        Ground Truth: {ground_truth}
+        Chunk: {chunk}
+        Only return the numerical score, nothing else."""
+        
+        score = float(self.llm_provider.get_completion(prompt).strip())
+        return min(max(score, 0), 1)
+
+    def evaluate_response_with_ai(self, question: str, ground_truth: str, response: str) -> str:
+        """Get a qualitative evaluation of the response from the LLM."""
+        prompt = f"""Evaluate this response based on the question and ground truth:
+        Question: {question}
+        Ground Truth: {ground_truth}
+        Response: {response}
+        
+        Provide a brief evaluation focusing on:
+        1. Accuracy
+        2. Completeness
+        3. Relevance
+        Keep the evaluation concise."""
+        
+        return self.llm_provider.get_completion(prompt).strip
+    
 class RAGEvaluator:
     def __init__(self, llm_provider: LLMProvider, embedding_provider: str = "azure"):
         load_dotenv()
