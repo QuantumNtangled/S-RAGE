@@ -180,20 +180,53 @@ Provide only a number between 0 and 1 with 2 decimal places (e.g., 0.75)."""
         score = float((await self.llm.generate_completion(prompt)).strip())
         return min(max(score, 0), 1)
 
-    async def evaluate_response_with_ai(self, question: str, ground_truth: str, response: str) -> str:
-        """Get a qualitative evaluation of the response from the LLM."""
-        prompt = f"""Evaluate this response based on the question and ground truth:
-        Question: {question}
-        Ground Truth: {ground_truth}
-        Response: {response}
-        
-        Provide a brief evaluation focusing on:
-        1. Accuracy
-        2. Completeness
-        3. Relevance
-        Keep the evaluation concise."""
-        
-        return (await self.llm.generate_completion(prompt)).strip()
+    async def evaluate_response_with_ai(
+        self, 
+        question: str, 
+        ground_truth: str, 
+        response: str
+    ) -> int:
+        """Get a numerical evaluation score from 1-10."""
+        system_prompt = """Task: Evaluate this RAG (Retrieval-Augmented Generation) response on a scale of 1-10.
+
+Evaluation Criteria (2 points each):
+1. Completeness: Does the response cover all key aspects of the Ground Truth?
+2. Accuracy: Are the facts presented correct and aligned with the Ground Truth?
+3. Relevance: Does the response directly address the original question?
+4. Clarity: Is the response well-structured and easy to understand?
+5. Conciseness: Is the response focused without unnecessary information?
+
+Scoring Guide:
+10: Exceptional - Perfect in all criteria
+8-9: Excellent - Minor flaws in 1-2 areas
+6-7: Good - Some gaps but generally effective
+4-5: Fair - Significant issues in multiple areas
+2-3: Poor - Major problems throughout
+1: Inadequate - Fails to meet any criteria effectively
+
+Provide only the numerical score (1-10) as your response."""
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"""Question: {question}
+Ground Truth: {ground_truth}
+Generated Response: {response}"""}
+        ]
+
+        try:
+            print("Generating AI evaluation score...")  # Debug log
+            score = int(await self.llm.generate_completion(messages))
+            print(f"AI evaluation score: {score}")  # Debug log
+            
+            # Ensure score is within valid range
+            score = max(1, min(10, score))
+            return score
+        except ValueError as e:
+            print(f"Error parsing AI evaluation score: {str(e)}")
+            return 0
+        except Exception as e:
+            print(f"Error in AI evaluation: {str(e)}")
+            return 0
     
     
         
