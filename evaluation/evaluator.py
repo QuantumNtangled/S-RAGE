@@ -20,7 +20,7 @@ class EvaluationManager:
         self.db = db_connection
         self.evaluator = RAGEvaluator(llm_provider=llm_provider)
     
-    def evaluate_response(self, ground_truth_id: int) -> Dict:
+    async def evaluate_response(self, ground_truth_id: int) -> Dict:
         print(f"Starting evaluation for ground truth ID: {ground_truth_id}")
         cursor = self.db.cursor()
         
@@ -51,25 +51,25 @@ class EvaluationManager:
         
         results = {
             "response_evaluation": {
-                "relevance": self.evaluator.calculate_relevance(
+                "relevance": await self.evaluator.calculate_relevance(
                     question, response
                 ),
-                "completeness": self.evaluator.calculate_completeness(
+                "completeness": await self.evaluator.calculate_completeness(
                     ground_truth, response
                 ),
-                "consistency": self.evaluator.calculate_consistency(
+                "consistency": await self.evaluator.calculate_consistency(
                     ground_truth, response
                 ),
-                "fluency": self.evaluator.calculate_fluency(
+                "fluency": await self.evaluator.calculate_fluency(
                     response
                 ),
                 "rouge_scores": self.evaluator.calculate_rouge_scores(
                     response, ground_truth
                 ),
-                "cosine_similarity": self.evaluator.calculate_cosine_similarity(
+                "cosine_similarity": await self.evaluator.calculate_cosine_similarity(
                     ground_truth, response
                 ),
-                "ai_evaluation": self.evaluator.evaluate_response_with_ai(
+                "ai_evaluation": await self.evaluator.evaluate_response_with_ai(
                     question, ground_truth, response
                 )
             },
@@ -79,13 +79,13 @@ class EvaluationManager:
         # Evaluate each chunk
         for chunk in chunks_list:
             chunk_eval = {
-                "cosine_similarity": self.evaluator.calculate_cosine_similarity(
+                "cosine_similarity": await self.evaluator.calculate_cosine_similarity(
                     ground_truth, chunk
                 ),
                 "rouge_scores": self.evaluator.calculate_rouge_scores(
                     chunk, ground_truth
                 ),
-                "completeness": self.evaluator.evaluate_chunk_completeness(
+                "completeness": await self.evaluator.evaluate_chunk_completeness(
                     chunk, ground_truth
                 )
             }

@@ -28,43 +28,43 @@ class RAGEvaluator:
         
         self.embedding_provider = embedding_provider
 
-    def calculate_relevance(self, question: str, response: str) -> float:
+    async def calculate_relevance(self, question: str, response: str) -> float:
         """Calculate how relevant the response is to the question."""
         prompt = f"""Rate the relevance of this response to the question on a scale of 0 to 1:
         Question: {question}
         Response: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm.generate_completion(prompt).strip())
+        score = float((await self.llm.generate_completion(prompt)).strip())
         return min(max(score, 0), 1)  # Ensure score is between 0 and 1
 
-    def calculate_completeness(self, ground_truth: str, response: str) -> float:
+    async def calculate_completeness(self, ground_truth: str, response: str) -> float:
         """Calculate how complete the response is compared to ground truth."""
         prompt = f"""Rate the completeness of this response compared to the ground truth on a scale of 0 to 1:
         Ground Truth: {ground_truth}
         Response: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm.generate_completion(prompt).strip())
+        score = float((await self.llm.generate_completion(prompt)).strip())
         return min(max(score, 0), 1)
 
-    def calculate_consistency(self, ground_truth: str, response: str) -> float:
+    async def calculate_consistency(self, ground_truth: str, response: str) -> float:
         """Calculate how consistent the response is with the ground truth."""
         prompt = f"""Rate the consistency of this response with the ground truth on a scale of 0 to 1:
         Ground Truth: {ground_truth}
         Response: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm.generate_completion(prompt).strip())
+        score = float((await self.llm.generate_completion(prompt)).strip())
         return min(max(score, 0), 1)
 
-    def calculate_fluency(self, response: str) -> float:
+    async def calculate_fluency(self, response: str) -> float:
         """Calculate the fluency of the response."""
         prompt = f"""Rate the fluency of this text on a scale of 0 to 1:
         Text: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm.generate_completion(prompt).strip())
+        score = float((await self.llm.generate_completion(prompt)).strip())
         return min(max(score, 0), 1)
 
     def calculate_rouge_scores(self, candidate: str, reference: str) -> Dict:
@@ -85,17 +85,17 @@ class RAGEvaluator:
             print(f"Error calculating cosine similarity: {str(e)}")
             return 0.0
 
-    def evaluate_chunk_completeness(self, chunk: str, ground_truth: str) -> float:
+    async def evaluate_chunk_completeness(self, chunk: str, ground_truth: str) -> float:
         """Evaluate how complete a chunk is compared to ground truth."""
         prompt = f"""Rate how much of the ground truth information is contained in this chunk on a scale of 0 to 1:
         Ground Truth: {ground_truth}
         Chunk: {chunk}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm.generate_completion(prompt).strip())
+        score = float((await self.llm.generate_completion(prompt)).strip())
         return min(max(score, 0), 1)
 
-    def evaluate_response_with_ai(self, question: str, ground_truth: str, response: str) -> str:
+    async def evaluate_response_with_ai(self, question: str, ground_truth: str, response: str) -> str:
         """Get a qualitative evaluation of the response from the LLM."""
         prompt = f"""Evaluate this response based on the question and ground truth:
         Question: {question}
@@ -108,7 +108,7 @@ class RAGEvaluator:
         3. Relevance
         Keep the evaluation concise."""
         
-        return self.llm.generate_completion(prompt).strip()
+        return (await self.llm.generate_completion(prompt)).strip()
     
     
         
