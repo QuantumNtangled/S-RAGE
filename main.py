@@ -65,27 +65,25 @@ class RAGEvaluator:
     def call_rag_api(self, question: str) -> dict:
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': self.config.api_key  # Direct API key without 'Bearer'
+            'Authorization': self.config.api_key
         }
         
-        # Start with additional params from config
-        payload = self.config.request_config.get('additional_params', {})
-        
-        # Add messages
-        messages = []
-        if system_message := self.config.request_config.get('system_message'):
-            messages.append({"role": "system", "content": system_message})
-        messages.append({"role": "user", "content": question})
-        payload["messages"] = messages
-        
-        # Add other configured parameters
-        for key, value in self.config.request_config.items():
-            if key not in ['system_message', 'additional_params']:
-                payload[key] = value
-        
-        # Update use_context to be the context value
-        if 'use_context' in payload:
-            payload['context'] = payload.pop('use_context')
+        # Build the payload exactly as expected
+        payload = {
+            "messages": [
+                {
+                    "role": "system",
+                    "content": self.config.request_config.get('system_message', '')
+                },
+                {
+                    "role": "user",
+                    "content": question
+                }
+            ],
+            "use_context": self.config.request_config.get('use_context', True),
+            "include_sources": self.config.request_config.get('include_sources', True),
+            "stream": self.config.request_config.get('stream', False)
+        }
         
         try:
             print(f"Calling RAG API with payload: {payload}")  # Debug print
