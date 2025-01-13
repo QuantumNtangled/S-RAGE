@@ -47,14 +47,18 @@ class LLMProvider:
             }
         ]
 
-        if self.provider == "azure":
-            return await self._azure_completion(messages)
-        elif self.provider == "openai":
-            return await self._openai_completion(messages)
-        elif self.provider == "bedrock":
-            return await self._bedrock_completion(messages)
-        else:
-            raise ValueError(f"Unsupported provider: {self.provider}")
+        try:
+            if self.provider == "azure":
+                return await self._azure_completion(messages)
+            elif self.provider == "openai":
+                return await self._openai_completion(messages)
+            elif self.provider == "bedrock":
+                return await self._bedrock_completion(messages)
+            else:
+                raise ValueError(f"Unsupported provider: {self.provider}")
+        except Exception as e:
+            print(f"Error in generate_completion: {str(e)}")
+            raise
 
     def _setup_azure(self):
         azure_endpoint = os.getenv("AZURE_API_BASE")
@@ -107,13 +111,11 @@ class LLMProvider:
         for msg in messages:
             formatted_messages.append({
                 "role": msg["role"],
-                "content": [{
-                    "type": "text",
-                    "text": msg["content"]
-                }]
+                "content": msg["content"]
             })
         
         try:
+            print(f"Sending formatted messages to Azure: {formatted_messages}")
             response = self.client.chat.completions.create(
                 model=self.deployment_name,
                 messages=formatted_messages,
@@ -123,6 +125,7 @@ class LLMProvider:
             return response.choices[0].message.content.strip()
         except Exception as e:
             print(f"Azure completion error: {str(e)}")
+            print(f"Full error details: {e.__dict__}")
             raise
 
     async def _openai_completion(self, messages: list) -> str:
