@@ -305,3 +305,27 @@ Chunk: {chunk}"""}
     def calculate_scores(self, candidate: str, reference: str) -> Dict:
         """Calculate BERT scores."""
         return self.calculate_bert_score(candidate, reference)
+
+    def calculate_semantic_similarity(self, text1: str, text2: str) -> float:
+        """Calculate semantic similarity using embeddings."""
+        try:
+            # Get embeddings for both texts
+            embedding1 = self.llm.client.embeddings.create(
+                model="text-embedding-ada-002",
+                input=text1
+            ).data[0].embedding
+
+            embedding2 = self.llm.client.embeddings.create(
+                model="text-embedding-ada-002",
+                input=text2
+            ).data[0].embedding
+
+            # Calculate cosine similarity
+            vec1 = np.array(embedding1)
+            vec2 = np.array(embedding2)
+            similarity = np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
+            
+            return round(float(similarity), 2)
+        except Exception as e:
+            print(f"Error calculating semantic similarity: {str(e)}")
+            return 0.0
