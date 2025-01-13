@@ -25,6 +25,10 @@ A web-based application for evaluating RAG (Retrieval-Augmented Generation) syst
 
 ## Installation
 
+bash
+python -m venv venv
+source venv/bin/activate # On Windows: venv\Scripts\activate
+
 1. Clone the repository:
 ```bash
 git clone <repository-url>
@@ -212,23 +216,38 @@ python server.py
 - `GET /api/results`: Get all evaluation results
 - `POST /api/evaluate/<ground_truth_id>`: Evaluate specific response
 
-## Database Schema
+### Database Schema
 
-### Ground Truth Table
-- `id`: Primary key
-- `question`: Question text
-- `answer`: Ground truth answer
+**ground_truth table:**
+- id (INTEGER PRIMARY KEY)
+- question (TEXT)
+- answer (TEXT)
 
-### RAG Responses Table
-- `id`: Primary key
-- `ground_truth_id`: Foreign key to ground truth
-- `response`: RAG system response
-- `chunks`: Retrieved chunks (JSON)
-- `evaluation`: Evaluation results (JSON)
-- `timestamp`: Response timestamp
+**rag_responses table:**
+- id (INTEGER PRIMARY KEY)
+- ground_truth_id (INTEGER, FOREIGN KEY)
+- response (TEXT)
+- chunks (TEXT)
+- evaluation (TEXT)
+- timestamp (DATETIME)
 
+## Evaluation Metrics
 
-## Environment Setup
+The system evaluates RAG responses using:
+- Semantic Similarity (using embeddings)
+- Relevance (0-1)
+- Completeness (0-1)
+- Consistency (0-1)
+- Fluency (0-1)
+
+## Troubleshooting
+
+If you encounter database issues:
+1. Delete the `rag_evaluator.db` file
+2. Run `python main.py` again to recreate the database
+3. Verify with `python check_db.py`
+
+For API issues, check the Flask server logs for detailed error messages.## Environment Setup
 
 1. Copy the `.env.example` file to `.env`:
 ```bash
