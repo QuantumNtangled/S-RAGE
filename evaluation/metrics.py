@@ -187,43 +187,49 @@ Provide only a number between 0 and 1 with 2 decimal places (e.g., 0.75)."""
         response: str
     ) -> int:
         """Get a numerical evaluation score from 1-10."""
-        system_prompt = """Task: Evaluate this RAG (Retrieval-Augmented Generation) response on a scale of 1-10.
+        system_prompt = """You are an expert evaluator. Rate this RAG response on a scale of 1-10.
 
-Evaluation Criteria (2 points each):
-1. Completeness: Does the response cover all key aspects of the Ground Truth?
-2. Accuracy: Are the facts presented correct and aligned with the Ground Truth?
-3. Relevance: Does the response directly address the original question?
-4. Clarity: Is the response well-structured and easy to understand?
-5. Conciseness: Is the response focused without unnecessary information?
+Scoring Criteria (2 points each):
+1. Accuracy: How well does it match the ground truth?
+2. Completeness: Does it cover all key points?
+3. Relevance: Does it directly answer the question?
+4. Clarity: Is it well-structured and clear?
+5. Precision: Is it focused and on-point?
 
 Scoring Guide:
-10: Exceptional - Perfect in all criteria
-8-9: Excellent - Minor flaws in 1-2 areas
-6-7: Good - Some gaps but generally effective
-4-5: Fair - Significant issues in multiple areas
-2-3: Poor - Major problems throughout
-1: Inadequate - Fails to meet any criteria effectively
+10: Perfect - Exceptional in all criteria
+8-9: Excellent - Minor flaws
+6-7: Good - Some gaps but effective
+4-5: Fair - Notable issues
+2-3: Poor - Major problems
+1: Inadequate - Fails to meet criteria
 
-Provide only the numerical score (1-10) as your response."""
+PROVIDE ONLY A NUMBER 1-10 AS YOUR RESPONSE."""
 
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"""Question: {question}
+        user_prompt = f"""Question: {question}
+
 Ground Truth: {ground_truth}
-Generated Response: {response}"""}
-        ]
+
+Response to Evaluate: {response}
+
+Score (1-10):"""
 
         try:
-            print("Generating AI evaluation score...")  # Debug log
-            score = int(await self.llm.generate_completion(messages))
-            print(f"AI evaluation score: {score}")  # Debug log
+            print("\nGenerating AI evaluation score...")
+            score = await self.llm.generate_completion(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ]
+            )
             
-            # Ensure score is within valid range
+            # Convert to integer and validate
+            score = int(score.strip())
             score = max(1, min(10, score))
+            
+            print(f"Generated AI evaluation score: {score}")
             return score
-        except ValueError as e:
-            print(f"Error parsing AI evaluation score: {str(e)}")
-            return 0
+            
         except Exception as e:
             print(f"Error in AI evaluation: {str(e)}")
             return 0

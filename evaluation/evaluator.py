@@ -24,7 +24,7 @@ class EvaluationManager:
         try:
             cursor = self.db.cursor()
             cursor.execute("""
-                SELECT gt.question, gt.answer, rr.response
+                SELECT gt.question, gt.answer, rr.response, rr.chunks
                 FROM ground_truth gt
                 JOIN rag_responses rr ON gt.id = rr.ground_truth_id
                 WHERE gt.id = ?
@@ -34,7 +34,8 @@ class EvaluationManager:
             if not row:
                 raise ValueError(f"No data found for ground_truth_id {ground_truth_id}")
             
-            question, ground_truth, response = row
+            question, ground_truth, response, chunks_json = row
+            chunks = json.loads(chunks_json) if chunks_json else []
             
             # Debug print for AI evaluation inputs
             print("\nStarting AI evaluation with:")
@@ -65,6 +66,16 @@ class EvaluationManager:
                 },
                 "chunks_evaluation": []
             }
+            
+            # Evaluate chunks
+            for chunk in chunks:
+                chunk_eval = {
+                    "chunk": chunk,
+                    "semantic_similarity": self.evaluator.calculate_semantic_similarity(
+                        ground_truth, chunk
+                    )
+                }
+                results["chunks_evaluation"].append(chunk_eval)
             
             # Debug print for AI evaluation score
             print(f"\nAI Evaluation Score: {results['response_evaluation']['ai_evaluation']}")
