@@ -7,6 +7,9 @@ from sentence_transformers import SentenceTransformer
 from evaluation.llm_provider import LLMProvider
 import os
 from dotenv import load_dotenv
+from bert_score import score
+import torch
+
 class RAGEvaluator:
 
     def __init__(self, llm_provider: LLMProvider, embedding_provider: str = "azure"):
@@ -27,6 +30,8 @@ class RAGEvaluator:
             raise ValueError(f"Unsupported embedding provider: {embedding_provider}")
         
         self.embedding_provider = embedding_provider
+        # Set device for BERT Score
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     async def calculate_relevance(self, question: str, response: str) -> float:
         """Calculate how relevant the response is to the question."""
@@ -211,3 +216,26 @@ Chunk: {chunk}"""}
             return score
         except ValueError:
             return 0
+
+    def calculate_bert_score(self, candidate: str, reference: str) -> Dict:
+        """Calculate BERT score between candidate and reference texts."""
+        try:
+            P, R, F1 = score([candidate], [reference], lang='en', device=self.device)
+            return {
+                'precision': float(P[0]),
+                'recall': float(R[0]),
+                'f1': float(F1[0])
+            }
+        except Exception as e:
+            print(f"Error calculating BERT score: {str(e)}")
+            return {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
+
+    def calculate_scores(self, candidate: str, reference: str) -> Dict:
+        """Calculate both ROUGE and BERT scores."""
+        rouge_scores = self.calculate_rouge_scores(candidate, reference)
+        bert_scores = self.calculate_bert_score(candidate, reference)
+        
+        return {
+            'rouge_scores': rouge_scores,
+            'bert_scores': bert_scores
+        }

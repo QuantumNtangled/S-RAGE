@@ -63,7 +63,7 @@ class EvaluationManager:
                 "fluency": await self.evaluator.calculate_fluency(
                     response
                 ),
-                "rouge_scores": self.evaluator.calculate_rouge_scores(
+                "scores": self.evaluator.calculate_scores(
                     response, ground_truth
                 ),
                 "cosine_similarity": self.evaluator.calculate_cosine_similarity(
@@ -82,7 +82,7 @@ class EvaluationManager:
                 "cosine_similarity": self.evaluator.calculate_cosine_similarity(
                     ground_truth, chunk
                 ),
-                "rouge_scores": self.evaluator.calculate_rouge_scores(
+                "scores": self.evaluator.calculate_scores(
                     chunk, ground_truth
                 ),
                 "completeness": await self.evaluator.evaluate_chunk_completeness(
