@@ -43,7 +43,7 @@ class LLMProvider:
             },
             {
                 "role": "user",
-                "content": prompt
+                "content": str(prompt)  # Ensure prompt is a string
             }
         ]
 
@@ -107,26 +107,33 @@ class LLMProvider:
         )
 
     async def _azure_completion(self, messages: list) -> str:
-        formatted_messages = []
-        for msg in messages:
-            formatted_messages.append({
-                "role": msg["role"],
-                "content": [
-                    {
-                        "type": "text",
-                        "text": msg["content"]
-                    }
-                ]
-            })
-        
         try:
+            print(f"Original messages: {messages}")  # Debug print
+            
+            # Format messages according to Azure OpenAI requirements
+            formatted_messages = []
+            for msg in messages:
+                formatted_message = {
+                    "role": msg["role"],
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": str(msg["content"])  # Ensure content is a string
+                        }
+                    ]
+                }
+                formatted_messages.append(formatted_message)
+            
             print(f"Sending formatted messages to Azure: {formatted_messages}")  # Debug print
+            
             response = self.client.chat.completions.create(
                 model=self.deployment_name,
                 messages=formatted_messages,
                 temperature=0,
                 max_tokens=150
             )
+            
+            print(f"Response from Azure: {response}")  # Debug print
             return response.choices[0].message.content.strip()
         except Exception as e:
             print(f"Azure completion error: {str(e)}")
