@@ -42,39 +42,55 @@ class RAGEvaluator:
         prompt = f"""Rate the relevance of this response to the question on a scale of 0 to 1:
         Question: {question}
         Response: {response}
-        Only return the numerical score, nothing else."""
+        Provide only a number between 0 and 1 with 2 decimal places. For example: 0.75"""
         
-        score = float((await self.llm.generate_completion(prompt)).strip())
-        return min(max(score, 0), 1)  # Ensure score is between 0 and 1
+        try:
+            score = float((await self.llm.generate_completion(prompt)).strip())
+            return round(min(max(score, 0), 1), 2)  # Ensure score is between 0 and 1 with 2 decimals
+        except Exception as e:
+            print(f"Error calculating relevance: {str(e)}")
+            return 0.0
 
     async def calculate_completeness(self, ground_truth: str, response: str) -> float:
         """Calculate how complete the response is compared to ground truth."""
         prompt = f"""Rate the completeness of this response compared to the ground truth on a scale of 0 to 1:
         Ground Truth: {ground_truth}
         Response: {response}
-        Only return the numerical score, nothing else."""
+        Provide only a number between 0 and 1 with 2 decimal places. For example: 0.75"""
         
-        score = float((await self.llm.generate_completion(prompt)).strip())
-        return min(max(score, 0), 1)
+        try:
+            score = float((await self.llm.generate_completion(prompt)).strip())
+            return round(min(max(score, 0), 1), 2)
+        except Exception as e:
+            print(f"Error calculating completeness: {str(e)}")
+            return 0.0
 
     async def calculate_consistency(self, ground_truth: str, response: str) -> float:
         """Calculate how consistent the response is with the ground truth."""
         prompt = f"""Rate the consistency of this response with the ground truth on a scale of 0 to 1:
         Ground Truth: {ground_truth}
         Response: {response}
-        Only return the numerical score, nothing else."""
+        Provide only a number between 0 and 1 with 2 decimal places. For example: 0.75"""
         
-        score = float((await self.llm.generate_completion(prompt)).strip())
-        return min(max(score, 0), 1)
+        try:
+            score = float((await self.llm.generate_completion(prompt)).strip())
+            return round(min(max(score, 0), 1), 2)
+        except Exception as e:
+            print(f"Error calculating consistency: {str(e)}")
+            return 0.0
 
     async def calculate_fluency(self, response: str) -> float:
         """Calculate the fluency of the response."""
         prompt = f"""Rate the fluency of this text on a scale of 0 to 1:
         Text: {response}
-        Only return the numerical score, nothing else."""
+        Provide only a number between 0 and 1 with 2 decimal places. For example: 0.75"""
         
-        score = float((await self.llm.generate_completion(prompt)).strip())
-        return min(max(score, 0), 1)
+        try:
+            score = float((await self.llm.generate_completion(prompt)).strip())
+            return round(min(max(score, 0), 1), 2)
+        except Exception as e:
+            print(f"Error calculating fluency: {str(e)}")
+            return 0.0
 
     def calculate_rouge_scores(self, candidate: str, reference: str) -> Dict:
         """Calculate ROUGE scores between candidate and reference texts."""
