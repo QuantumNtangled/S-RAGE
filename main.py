@@ -81,6 +81,15 @@ class Database:
             sample = df.iloc[0]
             print(f"Answer (first 100 chars): {sample['answer'][:100]}...")
             
+            # Store in database
+            cursor = self.conn.cursor()
+            for _, row in df.iterrows():
+                cursor.execute(
+                    "INSERT INTO ground_truth (question, answer) VALUES (?, ?)",
+                    (row['question'], row['answer'])
+                )
+            self.conn.commit()
+            
             return df.to_dict('records')
             
         except Exception as e:
