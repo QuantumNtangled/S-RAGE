@@ -6,6 +6,8 @@ import os
 from dotenv import load_dotenv
 import sqlite3
 import json
+import asyncio
+from functools import partial, wraps
 
 app = Flask(__name__)
 
@@ -109,12 +111,26 @@ def get_results():
     
     return jsonify(results)
 
+def run_async(func):
+    """Decorator to run async functions in sync Flask routes"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return asyncio.run(func(*args, **kwargs))
+    return wrapper
+
 @app.route('/api/evaluate/<int:ground_truth_id>', methods=['POST'])
-def evaluate_response(ground_truth_id):
+@run_async
+async def evaluate_response(ground_truth_id):
     try:
         print(f"Starting evaluation for ground_truth_id: {ground_truth_id}")
         evaluator = get_evaluator()
-        results = evaluator.evaluate_response(ground_truth_id)
+        
+        # Await the evaluation results
+        results = await evaluator.evaluate_response(ground_truth_id)
+        
+        # Convert any remaining coroutines in the results
+        results = await resolve_coroutines(results)
+        
         print(f"Evaluation results: {results}")
         
         # Store evaluation results in database
@@ -131,6 +147,16 @@ def evaluate_response(ground_truth_id):
     except Exception as e:
         print(f"Error in evaluation: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+async def resolve_coroutines(obj):
+    """Recursively resolve any coroutines in the object"""
+    if isinstance(obj, dict):
+        return {key: await resolve_coroutines(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [await resolve_coroutines(item) for item in obj]
+    elif asyncio.iscoroutine(obj):
+        return await obj
+    return obj
 
 # Initialize database before running the app
 init_db()
