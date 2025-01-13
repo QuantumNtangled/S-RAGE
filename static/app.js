@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 resultsList.innerHTML = data.map(result => {
-                    // Safely parse chunks and evaluation
                     let chunksHtml = '';
                     let evaluationHtml = '';
                     
@@ -104,6 +103,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="chunks-container">
                                 ${chunksHtml}
                             </div>
+                            
+                            <button onclick="evaluateResponse(${result.id})" class="evaluate-btn">
+                                Evaluate Response
+                            </button>
                             
                             ${evaluationHtml}
                         </div>
