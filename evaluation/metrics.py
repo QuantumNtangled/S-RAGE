@@ -423,8 +423,6 @@ Chunk: {chunk}"""}
             clean_text1 = self.remove_markdown(text1)
             clean_text2 = self.remove_markdown(text2)
             
-            print(f"Calculating similarity for texts of lengths: {len(clean_text1)}, {len(clean_text2)}")
-            
             # Get embeddings for cleaned texts
             embedding1 = self.llm.client.embeddings.create(
                 model="text-embedding-ada-002",
