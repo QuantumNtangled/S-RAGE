@@ -110,11 +110,11 @@ def get_results():
     return jsonify(results)
 
 @app.route('/api/evaluate/<int:ground_truth_id>', methods=['POST'])
-async def evaluate_response(ground_truth_id):
+def evaluate_response(ground_truth_id):
     try:
         print(f"Starting evaluation for ground_truth_id: {ground_truth_id}")
         evaluator = get_evaluator()
-        results = await evaluator.evaluate_response(ground_truth_id)
+        results = evaluator.evaluate_response(ground_truth_id)
         print(f"Evaluation results: {results}")
         
         # Store evaluation results in database
