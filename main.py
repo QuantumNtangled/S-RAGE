@@ -65,21 +65,31 @@ class Database:
     def load_ground_truth(self):
         """Load ground truth data from CSV file."""
         try:
-            df = pd.read_csv('data/ground_truth.csv')
+            # Explicitly specify the quoting parameters
+            df = pd.read_csv('data/ground_truth.csv', 
+                            quoting=csv.QUOTE_DOUBLE,  # Use double quotes
+                            quotechar='"',             # Quote character is "
+                            escapechar='\\',           # Use backslash to escape characters
+                            encoding='utf-8')          # Ensure UTF-8 encoding
+            
             print(f"Loaded {len(df)} rows from ground truth CSV")
+            
+            # Verify the columns
+            print("CSV columns:", df.columns.tolist())
+            
+            # Show sample of raw data
+            print("\nSample of first row raw data:")
+            print(df.iloc[0].to_dict())
             
             # Clean the text data
             df['answer'] = df['answer'].apply(self.clean_text)
             
-            # Remove any empty answers after cleaning
-            df = df[df['answer'].str.len() > 0]
-            
-            print(f"Processed {len(df)} valid ground truth entries")
-            
-            # Show sample of cleaned data
-            print("\nSample of cleaned ground truth data:")
+            # Verify data after cleaning
+            print(f"\nProcessed {len(df)} valid ground truth entries")
+            print("\nSample of cleaned data:")
             sample = df.iloc[0]
-            print(f"Answer (first 100 chars): {sample['answer'][:100]}...")
+            print(f"Question: {sample['question'][:100]}...")
+            print(f"Answer: {sample['answer'][:100]}...")
             
             # Store in database
             cursor = self.conn.cursor()
@@ -94,6 +104,7 @@ class Database:
             
         except Exception as e:
             print(f"Error loading ground truth data: {str(e)}")
+            print(f"Current working directory: {os.getcwd()}")
             return []
 
 class RAGEvaluator:

@@ -130,7 +130,7 @@ class LLMProvider:
                 model=self.deployment_name,
                 messages=formatted_messages,
                 temperature=0,
-                max_tokens=150
+                max_tokens=4000
             )
             
             print(f"Response from Azure: {response}")  # Debug print
