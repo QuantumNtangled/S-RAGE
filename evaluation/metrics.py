@@ -9,6 +9,9 @@ import os
 from dotenv import load_dotenv
 from bert_score import score
 import torch
+import nltk
+from nltk.tokenize import sent_tokenize
+nltk.download('punkt')
 
 class RAGEvaluator:
 
@@ -32,6 +35,7 @@ class RAGEvaluator:
         self.embedding_provider = embedding_provider
         # Set device for BERT Score
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.max_length = 500  # Maximum number of tokens per chunk
 
     async def calculate_relevance(self, question: str, response: str) -> float:
         """Calculate how relevant the response is to the question."""
@@ -217,15 +221,67 @@ Chunk: {chunk}"""}
         except ValueError:
             return 0
 
+    def chunk_text(self, text: str) -> list:
+        """Split text into sentences and then combine into chunks under max_length."""
+        sentences = sent_tokenize(text)
+        chunks = []
+        current_chunk = []
+        current_length = 0
+        
+        for sentence in sentences:
+            # Rough estimation of tokens (words + punctuation)
+            sentence_length = len(sentence.split())
+            
+            if current_length + sentence_length > self.max_length:
+                if current_chunk:
+                    chunks.append(' '.join(current_chunk))
+                current_chunk = [sentence]
+                current_length = sentence_length
+            else:
+                current_chunk.append(sentence)
+                current_length += sentence_length
+        
+        if current_chunk:
+            chunks.append(' '.join(current_chunk))
+        
+        return chunks
+
     def calculate_bert_score(self, candidate: str, reference: str) -> Dict:
-        """Calculate BERT score between candidate and reference texts."""
+        """Calculate BERT score between candidate and reference texts, handling long texts."""
         try:
-            P, R, F1 = score([candidate], [reference], lang='en', device=self.device)
-            return {
-                'precision': float(P[0]),
-                'recall': float(R[0]),
-                'f1': float(F1[0])
-            }
+            print(f"Calculating BERT score for texts of lengths: {len(candidate)}, {len(reference)}")
+            
+            # Split both texts into chunks
+            candidate_chunks = self.chunk_text(candidate)
+            reference_chunks = self.chunk_text(reference)
+            
+            print(f"Split into {len(candidate_chunks)} candidate chunks and {len(reference_chunks)} reference chunks")
+            
+            # Calculate scores for each combination of chunks
+            precisions = []
+            recalls = []
+            f1s = []
+            
+            for cand_chunk in candidate_chunks:
+                for ref_chunk in reference_chunks:
+                    P, R, F1 = score([cand_chunk], [ref_chunk], lang='en', device=self.device)
+                    precisions.append(float(P[0]))
+                    recalls.append(float(R[0]))
+                    f1s.append(float(F1[0]))
+            
+            # Take the maximum scores (assuming each chunk should match its best counterpart)
+            if precisions:
+                result = {
+                    'precision': max(precisions),
+                    'recall': max(recalls),
+                    'f1': max(f1s)
+                }
+                print(f"BERT scores: {result}")
+                return result
+            else:
+                print("No valid chunks to score")
+                return {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
+                
         except Exception as e:
             print(f"Error calculating BERT score: {str(e)}")
             return {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
