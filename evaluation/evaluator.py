@@ -66,7 +66,7 @@ class EvaluationManager:
                 "rouge_scores": self.evaluator.calculate_rouge_scores(
                     response, ground_truth
                 ),
-                "cosine_similarity": self.evaluator.calculate_cosine_similarity(
+                "cosine_similarity": await self.evaluator.calculate_cosine_similarity(
                     ground_truth, response
                 ),
                 "ai_evaluation": await self.evaluator.evaluate_response_with_ai(
@@ -79,7 +79,7 @@ class EvaluationManager:
         # Evaluate each chunk
         for chunk in chunks_list:
             chunk_eval = {
-                "cosine_similarity": self.evaluator.calculate_cosine_similarity(
+                "cosine_similarity": await self.evaluator.calculate_cosine_similarity(
                     ground_truth, chunk
                 ),
                 "rouge_scores": self.evaluator.calculate_rouge_scores(

@@ -76,19 +76,22 @@ class RAGEvaluator:
             'rougeL': scores['rougeL'].fmeasure
         }
 
-    def calculate_cosine_similarity(self, text1: str, text2: str) -> float:
+    async def calculate_cosine_similarity(self, text1: str, text2: str) -> float:
         """Calculate cosine similarity between two texts using embeddings."""
         try:
-            # Get embeddings synchronously
-            embedding1 = self.llm.client.embeddings.create(
+            # Create embeddings
+            response1 = self.llm.client.embeddings.create(
                 model="text-embedding-ada-002",
                 input=text1
-            ).data[0].embedding
-
-            embedding2 = self.llm.client.embeddings.create(
+            )
+            response2 = self.llm.client.embeddings.create(
                 model="text-embedding-ada-002",
                 input=text2
-            ).data[0].embedding
+            )
+
+            # Extract embedding vectors
+            embedding1 = response1.data[0].embedding
+            embedding2 = response2.data[0].embedding
 
             # Convert to numpy arrays for cosine similarity calculation
             vec1 = np.array(embedding1)
