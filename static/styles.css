@@ -97,4 +97,33 @@ pre {
     margin: 0;
     white-space: pre-wrap;
     word-wrap: break-word;
+}
+
+.chunks-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.chunk {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+}
+
+.chunk pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+}
+
+.evaluation pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
 } 
