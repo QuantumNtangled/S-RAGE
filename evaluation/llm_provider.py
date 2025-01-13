@@ -4,25 +4,33 @@ import json
 import boto3
 from typing import Dict, Any
 from openai import AzureOpenAI, OpenAI
+import aiohttp
 
 class LLMProvider:
-    def __init__(self, config_path: str = "llm.config.json"):
-        # Load environment variables
-        load_dotenv()
-        
-        # Load config
-        with open(config_path, 'r') as f:
-            self.config = json.load(f)
-        self.provider = self.config.get("default_provider", "azure")
-        self._setup_provider()
+    def __init__(self):
+        self.config = load_config('config.json')
+        self.api_endpoint = self.config.get('api_endpoint')
+        self.api_key = self.config.get('api_key')
 
-    def _setup_provider(self):
+    async def generate_completion(self, prompt: str) -> str:
+        """Generate a completion using the configured LLM provider."""
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful AI assistant. Please provide numerical scores or brief evaluations as requested."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+
         if self.provider == "azure":
-            self._setup_azure()
+            return await self._azure_completion(messages)
         elif self.provider == "openai":
-            self._setup_openai()
+            return await self._openai_completion(messages)
         elif self.provider == "bedrock":
-            self._setup_bedrock()
+            return await self._bedrock_completion(messages)
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
@@ -77,16 +85,16 @@ class LLMProvider:
             model=self.deployment_name,
             messages=messages,
             temperature=0,
-            max_tokens=5
+            max_tokens=4000  # Increased for evaluation responses
         )
         return response.choices[0].message.content.strip()
 
     async def _openai_completion(self, messages: list) -> str:
         response = self.client.chat.completions.create(
-            model=self.model,
+            model=self.model_name,
             messages=messages,
             temperature=0,
-            max_tokens=5
+            max_tokens=4000  # Increased for evaluation responses
         )
         return response.choices[0].message.content.strip()
 
@@ -98,18 +106,10 @@ class LLMProvider:
             modelId=self.model_id,
             body=json.dumps({
                 "prompt": prompt,
-                "max_tokens_to_sample": 5,
+                "max_tokens_to_sample": 4000,  # Increased for evaluation responses
                 "temperature": 0
             })
         )
         
         response_body = json.loads(response['body'].read())
-        return response_body['completion'].strip()
-
-    async def generate_completion(self, messages: list) -> str:
-        if self.provider == "azure":
-            return await self._azure_completion(messages)
-        elif self.provider == "openai":
-            return await self._openai_completion(messages)
-        elif self.provider == "bedrock":
-            return await self._bedrock_completion(messages) 
+        return response_body['completion'].strip() 
