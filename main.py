@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from typing import List, Optional
 import csv
 import os
+import pandas as pd
+import re
 
 @dataclass
 class Config:
@@ -20,7 +22,8 @@ class Database:
     def __init__(self, db_path: str = "rag_evaluator.db"):
         self.conn = sqlite3.connect(db_path)
         self.create_tables()
-    
+        self.ground_truth_data = self.load_ground_truth()
+
     def create_tables(self):
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS ground_truth (
@@ -42,6 +45,47 @@ class Database:
             )
         """)
         self.conn.commit()
+
+    def clean_text(self, text):
+        """Clean text to ensure UTF-8 compatibility and remove problematic characters."""
+        if not isinstance(text, str):
+            return ""
+        
+        # Remove non-UTF8 characters
+        text = text.encode('utf-8', 'ignore').decode('utf-8')
+        
+        # Remove null bytes
+        text = text.replace('\x00', '')
+        
+        # Remove other problematic characters but keep newlines
+        text = re.sub(r'[^\x20-\x7E\n]', '', text)
+        
+        return text.strip()
+
+    def load_ground_truth(self):
+        """Load ground truth data from CSV file."""
+        try:
+            df = pd.read_csv('data/ground_truth.csv')
+            print(f"Loaded {len(df)} rows from ground truth CSV")
+            
+            # Clean the text data
+            df['answer'] = df['answer'].apply(self.clean_text)
+            
+            # Remove any empty answers after cleaning
+            df = df[df['answer'].str.len() > 0]
+            
+            print(f"Processed {len(df)} valid ground truth entries")
+            
+            # Show sample of cleaned data
+            print("\nSample of cleaned ground truth data:")
+            sample = df.iloc[0]
+            print(f"Answer (first 100 chars): {sample['answer'][:100]}...")
+            
+            return df.to_dict('records')
+            
+        except Exception as e:
+            print(f"Error loading ground truth data: {str(e)}")
+            return []
 
 class RAGEvaluator:
     def __init__(self, config: Config):
