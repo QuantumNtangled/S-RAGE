@@ -11,22 +11,15 @@ from functools import partial, wraps
 
 app = Flask(__name__)
 
-# Load environment variables
+# Load environment variables and config silently
 load_dotenv()
-
-# Load configuration
 config = load_config('config.json')
-
-# Initialize the LLM provider
-llm_provider = LLMProvider()  # Remove the auth_type parameter
-
-# Database configuration
-DATABASE = 'rag_evaluator.db'  # Update this to match your database path
+llm_provider = LLMProvider()
+DATABASE = 'rag_evaluator.db'
 
 def init_db():
     with app.app_context():
         db = get_db()
-        # Create tables
         db.execute("""
             CREATE TABLE IF NOT EXISTS ground_truth (
                 id INTEGER PRIMARY KEY,
@@ -96,8 +89,16 @@ def get_results():
     
     results = []
     for row in cursor.fetchall():
-        print(f"Chunks from DB: {row[4]}")
-        print(f"Evaluation from DB: {row[5]}")
+        # Log evaluation data for debugging
+        if row[5]:  # evaluation column
+            print("\nEvaluation data from database:")
+            print(f"Ground Truth ID: {row[0]}")
+            try:
+                eval_data = json.loads(row[5])
+                if 'response_evaluation' in eval_data:
+                    print("AI Evaluation Score:", eval_data['response_evaluation'].get('ai_evaluation', 'Not found'))
+            except json.JSONDecodeError as e:
+                print(f"Error parsing evaluation JSON: {e}")
         
         results.append({
             "id": row[0],
@@ -122,18 +123,18 @@ def run_async(func):
 @run_async
 async def evaluate_response(ground_truth_id):
     try:
-        print(f"Starting evaluation for ground_truth_id: {ground_truth_id}")
+        print(f"\nStarting AI evaluation for ground_truth_id: {ground_truth_id}")
         evaluator = get_evaluator()
-        
-        # Await the evaluation results
         results = await evaluator.evaluate_response(ground_truth_id)
         
-        # Convert any remaining coroutines in the results
+        # Log AI evaluation results
+        if results and 'response_evaluation' in results:
+            print("AI Evaluation Results:")
+            print(f"Score: {results['response_evaluation'].get('ai_evaluation', 'Not found')}")
+        
         results = await resolve_coroutines(results)
         
-        print(f"Evaluation results: {results}")
-        
-        # Store evaluation results in database
+        # Store evaluation results
         db = get_db()
         cursor = db.cursor()
         cursor.execute("""
@@ -145,7 +146,7 @@ async def evaluate_response(ground_truth_id):
         
         return jsonify(results)
     except Exception as e:
-        print(f"Error in evaluation: {str(e)}")
+        print(f"Error in AI evaluation: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 async def resolve_coroutines(obj):
