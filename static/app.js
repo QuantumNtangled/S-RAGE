@@ -107,16 +107,23 @@ document.addEventListener('DOMContentLoaded', function() {
                         evaluationHtml = '<p>Error displaying evaluation</p>';
                     }
 
+                    // Function to safely display text content
+                    const safeText = (text) => {
+                        const tmp = document.createElement('div');
+                        tmp.textContent = text;
+                        return tmp.innerHTML;
+                    };
+
                     return `
                         <div class="result-item">
                             <h3>Question</h3>
-                            <p>${result.question}</p>
+                            <p>${safeText(result.question)}</p>
                             
                             <h3>Ground Truth</h3>
-                            <p>${result.ground_truth}</p>
+                            <pre class="ground-truth">${safeText(result.ground_truth)}</pre>
                             
                             <h3>Response</h3>
-                            <p>${result.response}</p>
+                            <pre class="response">${safeText(result.response)}</pre>
                             
                             <h3>Chunks</h3>
                             ${chunksHtml}
