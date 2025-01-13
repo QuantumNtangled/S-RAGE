@@ -40,25 +40,45 @@ class RAGEvaluator:
 
     async def calculate_relevance(self, question: str, response: str) -> float:
         """Calculate how relevant the response is to the question."""
-        prompt = f"""Rate the relevance of this response to the question on a scale of 0 to 1:
-        Question: {question}
-        Response: {response}
-        Provide only a number between 0 and 1 with 2 decimal places. For example: 0.75"""
-        
+        prompt = f"""Rate the relevance of this response to the question on a scale of 0 to 1.
+
+Relevance Rubric:
+1.0: Perfect relevance - Response directly and comprehensively addresses the question
+0.8: High relevance - Response addresses the main points but might miss minor details
+0.6: Moderate relevance - Response is on topic but misses some key points or includes unnecessary information
+0.4: Low relevance - Response only tangentially relates to the question
+0.2: Very low relevance - Response barely addresses the question
+0.0: No relevance - Response does not address the question at all
+
+Question: {question}
+Response: {response}
+
+Provide only a number between 0 and 1 with 2 decimal places (e.g., 0.75)."""
+
         try:
             score = float((await self.llm.generate_completion(prompt)).strip())
-            return round(min(max(score, 0), 1), 2)  # Ensure score is between 0 and 1 with 2 decimals
+            return round(min(max(score, 0), 1), 2)
         except Exception as e:
             print(f"Error calculating relevance: {str(e)}")
             return 0.0
 
     async def calculate_completeness(self, ground_truth: str, response: str) -> float:
         """Calculate how complete the response is compared to ground truth."""
-        prompt = f"""Rate the completeness of this response compared to the ground truth on a scale of 0 to 1:
-        Ground Truth: {ground_truth}
-        Response: {response}
-        Provide only a number between 0 and 1 with 2 decimal places. For example: 0.75"""
-        
+        prompt = f"""Rate the completeness of this response compared to the ground truth on a scale of 0 to 1.
+
+Completeness Rubric:
+1.0: Complete coverage - All key points and supporting details from ground truth are present
+0.8: High coverage - Most key points present with minor details missing
+0.6: Moderate coverage - Main points covered but significant details missing
+0.4: Partial coverage - Some key points missing, incomplete explanation
+0.2: Minimal coverage - Only basic or surface-level information included
+0.0: No coverage - None of the ground truth information is present
+
+Ground Truth: {ground_truth}
+Response: {response}
+
+Provide only a number between 0 and 1 with 2 decimal places (e.g., 0.75)."""
+
         try:
             score = float((await self.llm.generate_completion(prompt)).strip())
             return round(min(max(score, 0), 1), 2)
@@ -68,11 +88,21 @@ class RAGEvaluator:
 
     async def calculate_consistency(self, ground_truth: str, response: str) -> float:
         """Calculate how consistent the response is with the ground truth."""
-        prompt = f"""Rate the consistency of this response with the ground truth on a scale of 0 to 1:
-        Ground Truth: {ground_truth}
-        Response: {response}
-        Provide only a number between 0 and 1 with 2 decimal places. For example: 0.75"""
-        
+        prompt = f"""Rate the consistency of this response with the ground truth on a scale of 0 to 1.
+
+Consistency Rubric:
+1.0: Perfect consistency - No contradictions, all information aligns with ground truth
+0.8: High consistency - Minor discrepancies but no significant contradictions
+0.6: Moderate consistency - Some contradictions present but major points align
+0.4: Low consistency - Several contradictions or misaligned information
+0.2: Very low consistency - Mostly contradicts ground truth
+0.0: No consistency - Completely contradicts ground truth or provides entirely incorrect information
+
+Ground Truth: {ground_truth}
+Response: {response}
+
+Provide only a number between 0 and 1 with 2 decimal places (e.g., 0.75)."""
+
         try:
             score = float((await self.llm.generate_completion(prompt)).strip())
             return round(min(max(score, 0), 1), 2)
@@ -82,10 +112,20 @@ class RAGEvaluator:
 
     async def calculate_fluency(self, response: str) -> float:
         """Calculate the fluency of the response."""
-        prompt = f"""Rate the fluency of this text on a scale of 0 to 1:
-        Text: {response}
-        Provide only a number between 0 and 1 with 2 decimal places. For example: 0.75"""
-        
+        prompt = f"""Rate the fluency of this text on a scale of 0 to 1.
+
+Fluency Rubric:
+1.0: Perfect fluency - Professional-level writing, clear structure, excellent flow
+0.8: High fluency - Well-written, minor stylistic issues
+0.6: Moderate fluency - Generally clear but with some awkward phrasing or structure
+0.4: Low fluency - Frequent awkward phrasing, grammar issues, or poor structure
+0.2: Very low fluency - Major readability issues, confusing structure
+0.0: No fluency - Incomprehensible or severely broken language
+
+Text: {response}
+
+Provide only a number between 0 and 1 with 2 decimal places (e.g., 0.75)."""
+
         try:
             score = float((await self.llm.generate_completion(prompt)).strip())
             return round(min(max(score, 0), 1), 2)
