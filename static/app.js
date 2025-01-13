@@ -29,16 +29,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     let evaluationHtml = '';
                     
                     try {
-                        const chunks = Array.isArray(result.chunks) ? result.chunks : JSON.parse(result.chunks || '[]');
-                        chunksHtml = chunks.map((chunk, index) => `
-                            <div class="chunk">
-                                <h4>Chunk ${index + 1}</h4>
-                                <pre>${chunk}</pre>
+                        // Parse chunks and ensure it's an array
+                        let chunks = [];
+                        if (typeof result.chunks === 'string') {
+                            chunks = JSON.parse(result.chunks || '[]');
+                        } else if (Array.isArray(result.chunks)) {
+                            chunks = result.chunks;
+                        }
+
+                        // Function to strip HTML tags
+                        const stripHtml = (html) => {
+                            const tmp = document.createElement('div');
+                            tmp.innerHTML = html;
+                            return tmp.textContent || tmp.innerText || '';
+                        };
+
+                        // Generate HTML for all chunks within the container
+                        chunksHtml = `
+                            <div class="chunks-container">
+                                ${chunks.map((chunk, index) => `
+                                    <div class="chunk">
+                                        <h4>Chunk ${index + 1}</h4>
+                                        <pre>${stripHtml(chunk)}</pre>
+                                    </div>
+                                `).join('')}
                             </div>
-                        `).join('');
+                        `;
                     } catch (e) {
                         console.error('Error parsing chunks:', e);
-                        chunksHtml = '<p>Error displaying chunks</p>';
+                        chunksHtml = '<div class="chunks-container"><p>Error displaying chunks</p></div>';
                     }
                     
                     try {
@@ -100,9 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p>${result.response}</p>
                             
                             <h3>Chunks</h3>
-                            <div class="chunks-container">
-                                ${chunksHtml}
-                            </div>
+                            ${chunksHtml}
                             
                             <button onclick="evaluateResponse(${result.id})" class="evaluate-btn">
                                 Evaluate Response
