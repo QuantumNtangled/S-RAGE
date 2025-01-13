@@ -77,10 +77,26 @@ class RAGEvaluator:
         }
 
     def calculate_cosine_similarity(self, text1: str, text2: str) -> float:
-        """Calculate cosine similarity between two texts."""
+        """Calculate cosine similarity between two texts using embeddings."""
         try:
-            tfidf_matrix = self.vectorizer.fit_transform([text1, text2])
-            return float(cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0])
+            # Get embeddings synchronously
+            embedding1 = self.llm.client.embeddings.create(
+                model="text-embedding-ada-002",
+                input=text1
+            ).data[0].embedding
+
+            embedding2 = self.llm.client.embeddings.create(
+                model="text-embedding-ada-002",
+                input=text2
+            ).data[0].embedding
+
+            # Convert to numpy arrays for cosine similarity calculation
+            vec1 = np.array(embedding1)
+            vec2 = np.array(embedding2)
+            
+            # Calculate cosine similarity
+            similarity = np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
+            return float(similarity)
         except Exception as e:
             print(f"Error calculating cosine similarity: {str(e)}")
             return 0.0
