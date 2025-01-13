@@ -103,13 +103,27 @@ class LLMProvider:
         )
 
     async def _azure_completion(self, messages: list) -> str:
-        response = self.client.chat.completions.create(
-            model=self.deployment_name,
-            messages=messages,
-            temperature=0,
-            max_tokens=4000  # Increased for evaluation responses
-        )
-        return response.choices[0].message.content.strip()
+        formatted_messages = []
+        for msg in messages:
+            formatted_messages.append({
+                "role": msg["role"],
+                "content": [{
+                    "type": "text",
+                    "text": msg["content"]
+                }]
+            })
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.deployment_name,
+                messages=formatted_messages,
+                temperature=0,
+                max_tokens=150
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"Azure completion error: {str(e)}")
+            raise
 
     async def _openai_completion(self, messages: list) -> str:
         response = self.client.chat.completions.create(
