@@ -180,14 +180,9 @@ Provide only a number between 0 and 1 with 2 decimal places (e.g., 0.75)."""
         score = float((await self.llm.generate_completion(prompt)).strip())
         return min(max(score, 0), 1)
 
-    async def evaluate_response_with_ai(
-        self, 
-        question: str, 
-        ground_truth: str, 
-        response: str
-    ) -> int:
+    async def evaluate_response_with_ai(self, question: str, ground_truth: str, response: str) -> float:
         """Get a numerical evaluation score from 1-10."""
-        prompt = f"""You are an expert evaluator. Rate this RAG response on a scale of 1-10.
+        prompt = f"""Rate this response on a scale of 1 to 10.
 
 Scoring Criteria (2 points each):
 1. Accuracy: How well does it match the ground truth?
@@ -196,36 +191,20 @@ Scoring Criteria (2 points each):
 4. Clarity: Is it well-structured and clear?
 5. Precision: Is it focused and on-point?
 
-Scoring Guide:
-10: Perfect - Exceptional in all criteria
-8-9: Excellent - Minor flaws
-6-7: Good - Some gaps but effective
-4-5: Fair - Notable issues
-2-3: Poor - Major problems
-1: Inadequate - Fails to meet criteria
-
 Question: {question}
-
 Ground Truth: {ground_truth}
+Response: {response}
 
-Response to Evaluate: {response}
-
-PROVIDE ONLY A NUMBER 1-10 AS YOUR RESPONSE."""
+Provide only a number between 1 and 10."""
 
         try:
-            print("\nGenerating AI evaluation score...")
-            score = await self.llm.generate_completion(prompt)
-            
-            # Convert to integer and validate
-            score = int(score.strip())
-            score = max(1, min(10, score))
-            
-            print(f"Generated AI evaluation score: {score}")
+            score = float((await self.llm.generate_completion(prompt)).strip())
+            score = round(min(max(score, 1), 10))
+            print(f"AI Evaluation raw score: {score}")
             return score
-            
         except Exception as e:
             print(f"Error in AI evaluation: {str(e)}")
-            return 0
+            return 0.0
     
     
         
