@@ -106,12 +106,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             
                             ${evaluationHtml}
-                            
-                            <button onclick="evaluateResponse(${result.id})" class="evaluate-btn">
-                                Evaluate Response
-                            </button>
-                            
-                            <p class="timestamp">Timestamp: ${result.timestamp}</p>
                         </div>
                     `;
                 }).join('');

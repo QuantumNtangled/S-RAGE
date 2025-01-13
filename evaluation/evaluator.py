@@ -63,10 +63,7 @@ class EvaluationManager:
                 "fluency": await self.evaluator.calculate_fluency(
                     response
                 ),
-                "scores": self.evaluator.calculate_scores(
-                    response, ground_truth
-                ),
-                "cosine_similarity": self.evaluator.calculate_cosine_similarity(
+                "semantic_similarity": self.evaluator.calculate_semantic_similarity(
                     ground_truth, response
                 ),
                 "ai_evaluation": await self.evaluator.evaluate_response_with_ai(
@@ -79,11 +76,8 @@ class EvaluationManager:
         # Evaluate each chunk
         for chunk in chunks_list:
             chunk_eval = {
-                "cosine_similarity": self.evaluator.calculate_cosine_similarity(
+                "semantic_similarity": self.evaluator.calculate_semantic_similarity(
                     ground_truth, chunk
-                ),
-                "scores": self.evaluator.calculate_scores(
-                    chunk, ground_truth
                 ),
                 "completeness": await self.evaluator.evaluate_chunk_completeness(
                     chunk, ground_truth
