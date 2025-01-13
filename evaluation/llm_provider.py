@@ -6,11 +6,33 @@ from typing import Dict, Any
 from openai import AzureOpenAI, OpenAI
 import aiohttp
 
+def load_config(config_path: str) -> Dict[str, Any]:
+    """Load configuration from a JSON file."""
+    try:
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Configuration file not found at {config_path}")
+    except json.JSONDecodeError:
+        raise ValueError(f"Invalid JSON in configuration file {config_path}")
+
 class LLMProvider:
     def __init__(self):
+        load_dotenv()  # Load environment variables
         self.config = load_config('config.json')
         self.api_endpoint = self.config.get('api_endpoint')
         self.api_key = self.config.get('api_key')
+        self.provider = os.getenv("LLM_PROVIDER", "azure")  # Default to azure if not specified
+        
+        # Initialize the appropriate client based on provider
+        if self.provider == "azure":
+            self._setup_azure()
+        elif self.provider == "openai":
+            self._setup_openai()
+        elif self.provider == "bedrock":
+            self._setup_bedrock()
+        else:
+            raise ValueError(f"Unsupported provider: {self.provider}")
 
     async def generate_completion(self, prompt: str) -> str:
         """Generate a completion using the configured LLM provider."""
