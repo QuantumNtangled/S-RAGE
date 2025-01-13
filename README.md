@@ -8,7 +8,7 @@ A web-based application for evaluating RAG (Retrieval-Augmented Generation) syst
 - Automated evaluation metrics:
   - Cosine similarity using sentence embeddings
   - ROUGE scores for response evaluation
-  - AI-based evaluation using GPT-4
+  - AI-based evaluation using GPT-4o-mini
 - Web interface for viewing results
 - SQLite database for storing responses and evaluations
 - Configurable API endpoints and response mapping
