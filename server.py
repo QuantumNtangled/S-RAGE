@@ -80,6 +80,7 @@ def get_results():
     cursor = db.cursor()
     cursor.execute("""
         SELECT
+            gt.id,
             gt.question,
             gt.answer,
             rr.response,
@@ -93,17 +94,17 @@ def get_results():
     
     results = []
     for row in cursor.fetchall():
-        # Add debug printing
-        print(f"Chunks from DB: {row[3]}")
-        print(f"Evaluation from DB: {row[4]}")
+        print(f"Chunks from DB: {row[4]}")
+        print(f"Evaluation from DB: {row[5]}")
         
         results.append({
-            "question": row[0],
-            "ground_truth": row[1],
-            "response": row[2],
-            "chunks": json.loads(row[3]) if row[3] else [],  # Ensure chunks are parsed from JSON
-            "evaluation": json.loads(row[4]) if row[4] else None,  # Ensure evaluation is parsed from JSON
-            "timestamp": row[5]
+            "id": row[0],
+            "question": row[1],
+            "ground_truth": row[2],
+            "response": row[3],
+            "chunks": json.loads(row[4]) if row[4] else [],
+            "evaluation": json.loads(row[5]) if row[5] else None,
+            "timestamp": row[6]
         })
     
     return jsonify(results)

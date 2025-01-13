@@ -104,6 +104,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         ${evaluationHtml}
                         
+                        <button onclick="evaluateResponse(${result.id})" class="evaluate-btn">
+                            Evaluate Response
+                        </button>
+                        
                         <p class="timestamp">Timestamp: ${result.timestamp}</p>
                     </div>
                 `;
@@ -122,4 +126,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initial load
     document.addEventListener('DOMContentLoaded', loadResults);
+
+    // Add this function to handle evaluation
+    async function evaluateResponse(groundTruthId) {
+        try {
+            const response = await fetch(`/api/evaluate/${groundTruthId}`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            console.log('Evaluation result:', result);
+            loadResults(); // Reload the results to show the evaluation
+        } catch (error) {
+            console.error('Error evaluating response:', error);
+        }
+    }
 }); 

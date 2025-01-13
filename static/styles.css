@@ -126,4 +126,18 @@ pre {
     background-color: #f5f5f5;
     padding: 10px;
     border-radius: 4px;
+}
+
+.evaluate-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 10px 0;
+}
+
+.evaluate-btn:hover {
+    background-color: #45a049;
 } 
