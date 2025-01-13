@@ -1,10 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     const loading = document.getElementById('loading');
-    const resultsList = document.getElementById('resultsList');
+    const resultsList = document.querySelector('.results');
 
     // Make evaluateResponse globally accessible
     window.evaluateResponse = async function(groundTruthId) {
         try {
+            loading.style.display = 'block';
             const response = await fetch(`/api/evaluate/${groundTruthId}`, {
                 method: 'POST'
             });
@@ -13,15 +14,17 @@ document.addEventListener('DOMContentLoaded', function() {
             loadResults(); // Reload the results to show the evaluation
         } catch (error) {
             console.error('Error evaluating response:', error);
+        } finally {
+            loading.style.display = 'none';
         }
     }
 
     function loadResults() {
+        loading.style.display = 'block';
         fetch('/api/results')
             .then(response => response.json())
             .then(data => {
-                const resultsContainer = document.getElementById('results');
-                resultsContainer.innerHTML = data.map(result => {
+                resultsList.innerHTML = data.map(result => {
                     // Safely parse chunks and evaluation
                     let chunksHtml = '';
                     let evaluationHtml = '';
@@ -99,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     return `
-                        <div class="result">
+                        <div class="result-item">
                             <h3>Question</h3>
                             <p>${result.question}</p>
                             
@@ -127,7 +130,10 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                document.getElementById('results').innerHTML = `<p>Error loading results: ${error.message}</p>`;
+                resultsList.innerHTML = `<p>Error loading results: ${error.message}</p>`;
+            })
+            .finally(() => {
+                loading.style.display = 'none';
             });
     }
 
@@ -135,5 +141,5 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(loadResults, 30000);
 
     // Initial load
-    document.addEventListener('DOMContentLoaded', loadResults);
+    loadResults();
 }); 
