@@ -45,6 +45,13 @@ def check_database():
             print(f"Response (truncated): {row[2]}...")
             print(f"Ground Truth Answer (truncated): {row[3]}...")
             
+        cursor.execute("SELECT id, evaluation FROM rag_responses WHERE evaluation IS NOT NULL LIMIT 1")
+        eval_row = cursor.fetchone()
+        if eval_row:
+            print("\nSample Evaluation Data:")
+            print(f"ID: {eval_row[0]}")
+            print(f"Evaluation: {eval_row[1]}")
+            
     except Exception as e:
         print(f"Error: {str(e)}")
     finally:
