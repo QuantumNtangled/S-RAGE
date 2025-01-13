@@ -35,7 +35,7 @@ class RAGEvaluator:
         Response: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm.get_completion(prompt).strip())
+        score = float(self.llm.generate_completion(prompt).strip())
         return min(max(score, 0), 1)  # Ensure score is between 0 and 1
 
     def calculate_completeness(self, ground_truth: str, response: str) -> float:
@@ -45,7 +45,7 @@ class RAGEvaluator:
         Response: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm.get_completion(prompt).strip())
+        score = float(self.llm.generate_completion(prompt).strip())
         return min(max(score, 0), 1)
 
     def calculate_consistency(self, ground_truth: str, response: str) -> float:
@@ -55,7 +55,7 @@ class RAGEvaluator:
         Response: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm.get_completion(prompt).strip())
+        score = float(self.llm.generate_completion(prompt).strip())
         return min(max(score, 0), 1)
 
     def calculate_fluency(self, response: str) -> float:
@@ -64,7 +64,7 @@ class RAGEvaluator:
         Text: {response}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm.get_completion(prompt).strip())
+        score = float(self.llm.generate_completion(prompt).strip())
         return min(max(score, 0), 1)
 
     def calculate_rouge_scores(self, candidate: str, reference: str) -> Dict:
@@ -92,7 +92,7 @@ class RAGEvaluator:
         Chunk: {chunk}
         Only return the numerical score, nothing else."""
         
-        score = float(self.llm.get_completion(prompt).strip())
+        score = float(self.llm.generate_completion(prompt).strip())
         return min(max(score, 0), 1)
 
     def evaluate_response_with_ai(self, question: str, ground_truth: str, response: str) -> str:
@@ -108,7 +108,7 @@ class RAGEvaluator:
         3. Relevance
         Keep the evaluation concise."""
         
-        return self.llm.get_completion(prompt).strip()
+        return self.llm.generate_completion(prompt).strip()
     
     
         
