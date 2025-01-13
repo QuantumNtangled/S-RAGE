@@ -11,6 +11,7 @@ from bert_score import score
 import torch
 import nltk
 from nltk.tokenize import sent_tokenize
+import re
 nltk.download('punkt')
 
 class RAGEvaluator:
@@ -306,18 +307,60 @@ Chunk: {chunk}"""}
         """Calculate BERT scores."""
         return self.calculate_bert_score(candidate, reference)
 
+    def remove_markdown(self, text: str) -> str:
+        """Remove markdown formatting from text."""
+        if not isinstance(text, str):
+            return ""
+            
+        # Remove code blocks
+        text = re.sub(r'```[\s\S]*?```', '', text)
+        
+        # Remove inline code
+        text = re.sub(r'`[^`]*`', '', text)
+        
+        # Remove headers
+        text = re.sub(r'#{1,6}\s.*?\n', '', text)
+        
+        # Remove bold/italic
+        text = re.sub(r'\*\*.*?\*\*', '', text)
+        text = re.sub(r'__.*?__', '', text)
+        text = re.sub(r'\*.*?\*', '', text)
+        text = re.sub(r'_.*?_', '', text)
+        
+        # Remove links
+        text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+        
+        # Remove images
+        text = re.sub(r'!\[([^\]]+)\]\([^\)]+\)', '', text)
+        
+        # Remove bullet points and numbered lists
+        text = re.sub(r'^\s*[-*+]\s+', '', text, flags=re.MULTILINE)
+        text = re.sub(r'^\s*\d+\.\s+', '', text, flags=re.MULTILINE)
+        
+        # Clean up extra whitespace
+        text = re.sub(r'\n\s*\n', '\n', text)
+        text = text.strip()
+        
+        return text
+
     def calculate_semantic_similarity(self, text1: str, text2: str) -> float:
-        """Calculate semantic similarity using embeddings."""
+        """Calculate semantic similarity using embeddings after removing markdown."""
         try:
-            # Get embeddings for both texts
+            # Remove markdown from both texts
+            clean_text1 = self.remove_markdown(text1)
+            clean_text2 = self.remove_markdown(text2)
+            
+            print(f"Calculating similarity for texts of lengths: {len(clean_text1)}, {len(clean_text2)}")
+            
+            # Get embeddings for cleaned texts
             embedding1 = self.llm.client.embeddings.create(
                 model="text-embedding-ada-002",
-                input=text1
+                input=clean_text1
             ).data[0].embedding
 
             embedding2 = self.llm.client.embeddings.create(
                 model="text-embedding-ada-002",
-                input=text2
+                input=clean_text2
             ).data[0].embedding
 
             # Calculate cosine similarity
