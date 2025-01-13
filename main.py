@@ -121,12 +121,19 @@ class RAGEvaluator:
             'Authorization': self.config.api_key
         }
         
+        # Simplified system message
+        system_message = """You are a helpful AI assistant that provides clear, accurate responses based on the given context. 
+        
+Important Instructions:
+1. Use ONLY the provided context to answer the question
+2. Do NOT use markdown formatting in your response"""
+        
         # Build the payload exactly as expected
         payload = {
             "messages": [
                 {
                     "role": "system",
-                    "content": self.config.request_config.get('system_message', '')
+                    "content": system_message
                 },
                 {
                     "role": "user",
