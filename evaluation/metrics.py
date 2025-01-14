@@ -16,6 +16,20 @@ nltk.download('punkt')
 
 class RAGEvaluator:
 
+    def __init__(self, llm_provider):
+        self.llm = llm_provider  # For chunks
+        self.main_eval = MainEvalProvider()  # For main evaluations
+        
+        # Copy credentials from the existing provider
+        if hasattr(llm_provider, 'config'):
+            self.main_eval.config = llm_provider.config
+        if hasattr(llm_provider, 'provider'):
+            self.main_eval.provider = llm_provider.provider
+        if hasattr(llm_provider, 'client'):
+            self.main_eval.client = llm_provider.client
+        if hasattr(llm_provider, 'deployment_name'):
+            self.main_eval.deployment_name = llm_provider.deployment_name
+
     def __init__(self, llm_provider: LLMProvider, embedding_provider: str = "azure"):
         load_dotenv()
         self.rouge = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)

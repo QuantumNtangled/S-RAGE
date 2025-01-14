@@ -21,8 +21,7 @@ except ImportError:
 class EvaluationManager:
     def __init__(self, db_connection, llm_provider):
         self.db = db_connection
-        self.evaluator = RAGEvaluator(llm_provider)
-        self.main_eval_provider = MainEvalProvider()  # Create the main eval provider
+        self.evaluator = RAGEvaluator(llm_provider=llm_provider)
     
     async def evaluate_response(self, ground_truth_id: int) -> Dict:
         try:
