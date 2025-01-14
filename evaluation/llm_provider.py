@@ -6,26 +6,37 @@ from typing import Dict, Any
 from openai import AzureOpenAI, OpenAI
 import aiohttp
 
-def load_config(config_path: str) -> Dict[str, Any]:
-    """Load configuration from a JSON file."""
+def load_config(config_path: str) -> dict:
+    """Load configuration from JSON file."""
     try:
-        with open(config_path, 'r') as f:
+        with open(config_path) as f:
             return json.load(f)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Configuration file not found at {config_path}")
-    except json.JSONDecodeError:
-        raise ValueError(f"Invalid JSON in configuration file {config_path}")
+    except Exception as e:
+        print(f"Error loading config: {str(e)}")
+        return {}
 
 class MainEvalProvider:
     """Dedicated provider for main evaluations (non-chunk)"""
     def __init__(self):
         load_dotenv()
-        self.client = AzureOpenAI(
-            api_key=os.getenv("AZURE_OPENAI_KEY"),
-            api_version="2024-02-15-preview",
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
-        )
-        self.deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+        # Get credentials from environment or config
+        self.config = load_config('config.json')
+        self.provider = os.getenv("LLM_PROVIDER", "azure")
+
+        if self.provider == "azure":
+            self.client = AzureOpenAI(
+                api_key=os.getenv("AZURE_OPENAI_KEY", self.config.get('azure_api_key')),
+                api_version="2024-02-15-preview",
+                azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", self.config.get('azure_endpoint'))
+            )
+            self.deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", self.config.get('azure_deployment_name'))
+        elif self.provider == "openai":
+            self.client = OpenAI(
+                api_key=os.getenv("OPENAI_API_KEY", self.config.get('openai_api_key'))
+            )
+            self.model = os.getenv("OPENAI_MODEL", self.config.get('openai_model', 'gpt-4'))
+        else:
+            raise ValueError(f"Unsupported provider: {self.provider}")
 
     async def generate_completion(self, prompt: str) -> str:
         """Generate a completion specifically for main evaluations."""
@@ -35,11 +46,18 @@ class MainEvalProvider:
                 {"role": "user", "content": prompt}
             ]
             
-            response = self.client.chat.completions.create(
-                model=self.deployment_name,
-                messages=messages,
-                temperature=0.0
-            )
+            if self.provider == "azure":
+                response = self.client.chat.completions.create(
+                    model=self.deployment_name,
+                    messages=messages,
+                    temperature=0.0
+                )
+            else:  # openai
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=0.0
+                )
             
             if response.choices and response.choices[0].message.content:
                 return response.choices[0].message.content.strip()
