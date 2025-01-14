@@ -9,16 +9,20 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 try:
     from metrics import RAGEvaluator  # Try local import first
+    from llm_provider import MainEvalProvider  # Add this import
 except ImportError:
     try:
         from evaluation.metrics import RAGEvaluator  # Try package import
+        from evaluation.llm_provider import MainEvalProvider  # And this one
     except ImportError:
         from .metrics import RAGEvaluator  # Try relative import
+        from .llm_provider import MainEvalProvider  # And this one
 
 class EvaluationManager:
     def __init__(self, db_connection, llm_provider):
         self.db = db_connection
         self.evaluator = RAGEvaluator(llm_provider)
+        self.main_eval_provider = MainEvalProvider()  # Create the main eval provider
     
     async def evaluate_response(self, ground_truth_id: int) -> Dict:
         try:
@@ -37,13 +41,13 @@ class EvaluationManager:
             
             question, ground_truth, response = row
             
-            # Do main response evaluation first
+            # Use main_eval_provider for AI evaluation
             ai_score = await self.evaluator.evaluate_response_with_ai(
                 question=question,
                 ground_truth=ground_truth,
                 response=response
             )
-            print(f"\nMain AI Evaluation Score: {ai_score}")
+            print(f"\nMain AI Evaluation Score (before storing): {ai_score} (type: {type(ai_score)})")
             
             results = {
                 "response_evaluation": {
@@ -62,7 +66,7 @@ class EvaluationManager:
                     "semantic_similarity": self.evaluator.calculate_semantic_similarity(
                         ground_truth, response
                     ),
-                    "ai_evaluation": ai_score
+                    "ai_evaluation": ai_score  # This should now be a string
                 }
             }
             
@@ -87,6 +91,9 @@ class EvaluationManager:
                 chunks_evaluation.append(chunk_eval)
             
             results["chunks_evaluation"] = chunks_evaluation
+            
+            print(f"\nFinal results before DB storage:")
+            print(f"AI Evaluation in results: {results['response_evaluation']['ai_evaluation']} (type: {type(results['response_evaluation']['ai_evaluation'])})")
             
             # Store in database
             cursor.execute("""
