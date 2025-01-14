@@ -196,7 +196,7 @@ Provide only a number between 0 and 1 with 2 decimal places (e.g., 0.75)."""
 
     async def evaluate_response_with_ai(self, question: str, ground_truth: str, response: str) -> str:
         """Get a numerical evaluation score from 1-10."""
-        prompt = f"""Evaluate this RAG response and provide ONLY A SINGLE INTEGER between 1-10.
+        prompt = f"""Rate this response on a scale of 1 to 10.
 
 Criteria and Weights:
 - Accuracy (0.35): Facts match ground truth
@@ -209,12 +209,10 @@ Question: {question}
 Ground Truth: {ground_truth}
 Response: {response}
 
-RESPOND WITH ONLY A SINGLE INTEGER 1-10. NO OTHER TEXT."""
+PROVIDE ONLY A SINGLE INTEGER 1-10. NO OTHER TEXT."""
 
         try:
-            score = await self.main_eval.generate_completion(prompt)
-            # Extract just the first integer if there's any other text
-            score = ''.join(filter(str.isdigit, score))[:1] or "0"
+            score = (await self.main_eval.generate_completion(prompt)).strip()
             print(f"AI Evaluation raw score: {score}")
             return score
         except Exception as e:
