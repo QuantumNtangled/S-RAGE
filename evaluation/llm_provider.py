@@ -16,6 +16,39 @@ def load_config(config_path: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         raise ValueError(f"Invalid JSON in configuration file {config_path}")
 
+class MainEvalProvider:
+    """Dedicated provider for main evaluations (non-chunk)"""
+    def __init__(self):
+        load_dotenv()
+        self.client = AzureOpenAI(
+            api_key=os.getenv("AZURE_OPENAI_KEY"),
+            api_version="2024-02-15-preview",
+            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+        )
+        self.deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+
+    async def generate_completion(self, prompt: str) -> str:
+        """Generate a completion specifically for main evaluations."""
+        try:
+            messages = [
+                {"role": "system", "content": "You are an expert evaluator. Please provide a numerical score as requested."},
+                {"role": "user", "content": prompt}
+            ]
+            
+            response = self.client.chat.completions.create(
+                model=self.deployment_name,
+                messages=messages,
+                temperature=0.0
+            )
+            
+            if response.choices and response.choices[0].message.content:
+                return response.choices[0].message.content.strip()
+            return "0"
+                
+        except Exception as e:
+            print(f"Error in MainEvalProvider completion: {str(e)}")
+            return "0"
+
 class LLMProvider:
     def __init__(self):
         load_dotenv()  # Load environment variables
