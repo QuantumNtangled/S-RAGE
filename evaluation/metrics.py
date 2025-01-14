@@ -194,52 +194,32 @@ Provide only a number between 0 and 1 with 2 decimal places (e.g., 0.75)."""
         score = float((await self.llm.generate_completion(prompt)).strip())
         return min(max(score, 0), 1)
 
-    async def evaluate_response_with_ai(
-        self, 
-        question: str, 
-        ground_truth: str, 
-        response: str
-    ) -> int:
+    async def evaluate_response_with_ai(self, question: str, ground_truth: str, response: str) -> str:
         """Get a numerical evaluation score from 1-10."""
-        prompt = f"""You are an expert evaluator. Rate this RAG response on a scale of 1-10.
+        prompt = f"""Evaluate this RAG response and provide ONLY A SINGLE INTEGER between 1-10.
 
-Scoring Criteria (2 points each):
-1. Accuracy: How well does it match the ground truth?
-2. Completeness: Does it cover all key points?
-3. Relevance: Does it directly answer the question?
-4. Clarity: Is it well-structured and clear?
-5. Precision: Is it focused and on-point?
-
-Scoring Guide:
-10: Perfect - Exceptional in all criteria
-8-9: Excellent - Minor flaws
-6-7: Good - Some gaps but effective
-4-5: Fair - Notable issues
-2-3: Poor - Major problems
-1: Inadequate - Fails to meet criteria
+Criteria and Weights:
+- Accuracy (0.35): Facts match ground truth
+- Completeness (0.25): Covers all key points
+- Relevance (0.20): Directly answers question
+- Clarity (0.10): Well-structured and clear
+- Conciseness (0.10): Focused without fluff
 
 Question: {question}
-
 Ground Truth: {ground_truth}
+Response: {response}
 
-Response to Evaluate: {response}
-
-PROVIDE ONLY A NUMBER 1-10 AS YOUR RESPONSE."""
+RESPOND WITH ONLY A SINGLE INTEGER 1-10. NO OTHER TEXT."""
 
         try:
-            print("\nGenerating AI evaluation score...")
-            score = await self.llm.generate_completion(prompt)
-            
-            # Convert to integer and validate
-            score = int(score.strip())
-            score = max(1, min(10, score))
-            
-            print(f"Generated AI evaluation score: {score}")
+            score = await self.main_eval.generate_completion(prompt)
+            # Extract just the first integer if there's any other text
+            score = ''.join(filter(str.isdigit, score))[:1] or "0"
+            print(f"AI Evaluation raw score: {score}")
             return score
-            
         except Exception as e:
             print(f"Error in AI evaluation: {str(e)}")
-            return 0
+            return "0"
     
     
         
