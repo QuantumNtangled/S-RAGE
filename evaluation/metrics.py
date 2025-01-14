@@ -180,7 +180,7 @@ Provide only a number between 0 and 1 with 2 decimal places (e.g., 0.75)."""
         score = float((await self.llm.generate_completion(prompt)).strip())
         return min(max(score, 0), 1)
 
-    async def evaluate_response_with_ai(self, question: str, ground_truth: str, response: str) -> float:
+    async def evaluate_response_with_ai(self, question: str, ground_truth: str, response: str) -> str:
         """Get a numerical evaluation score from 1-10."""
         prompt = f"""Rate this response on a scale of 1 to 10.
 
@@ -198,13 +198,12 @@ Response: {response}
 Provide only a number between 1 and 10."""
 
         try:
-            score = float((await self.llm.generate_completion(prompt)).strip())
-            score = round(min(max(score, 1), 10))
+            score = (await self.llm.generate_completion(prompt)).strip()
             print(f"AI Evaluation raw score: {score}")
             return score
         except Exception as e:
             print(f"Error in AI evaluation: {str(e)}")
-            return 0.0
+            return "Error"
     
     
         

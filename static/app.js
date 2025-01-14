@@ -78,10 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <h5>Consistency: ${responseEval.consistency}</h5>
                                                 <h5>Fluency: ${responseEval.fluency}</h5>
                                                 <h5>Semantic Similarity: ${responseEval.semantic_similarity}</h5>
-                                            </div>
-                                            <div class="metric-card">
-                                                <h4>AI Evaluation</h4>
-                                                <pre>${responseEval.ai_evaluation}</pre>
+                                                <h5>AI Evaluation: ${responseEval.ai_evaluation || 'N/A'}</h5>
                                             </div>
                                         </div>
                                         ${chunksEval.length > 0 ? `
