@@ -23,8 +23,9 @@ class EvaluationManager:
     async def evaluate_response(self, ground_truth_id: int) -> Dict:
         try:
             cursor = self.db.cursor()
+            # First get just the main evaluation data
             cursor.execute("""
-                SELECT gt.question, gt.answer, rr.response, rr.chunks
+                SELECT gt.question, gt.answer, rr.response
                 FROM ground_truth gt
                 JOIN rag_responses rr ON gt.id = rr.ground_truth_id
                 WHERE gt.id = ?
@@ -34,16 +35,16 @@ class EvaluationManager:
             if not row:
                 raise ValueError(f"No data found for ground_truth_id {ground_truth_id}")
             
-            question, ground_truth, response, chunks_json = row
-            chunks = json.loads(chunks_json) if chunks_json else []
+            question, ground_truth, response = row
             
-            # Debug print for AI evaluation inputs
-            print("\nStarting AI evaluation with:")
-            print(f"Question: {question[:100]}...")
-            print(f"Ground Truth: {ground_truth[:100]}...")
-            print(f"Response: {response[:100]}...")
+            # Do main response evaluation first
+            ai_score = await self.evaluator.evaluate_response_with_ai(
+                question=question,
+                ground_truth=ground_truth,
+                response=response
+            )
+            print(f"\nMain AI Evaluation Score: {ai_score}")
             
-            # First evaluate the main response
             results = {
                 "response_evaluation": {
                     "relevance": await self.evaluator.calculate_relevance(
@@ -61,16 +62,18 @@ class EvaluationManager:
                     "semantic_similarity": self.evaluator.calculate_semantic_similarity(
                         ground_truth, response
                     ),
-                    "ai_evaluation": await self.evaluator.evaluate_response_with_ai(
-                        question=question,
-                        ground_truth=ground_truth,
-                        response=response  # Pass the actual response, not chunks
-                    )
-                },
-                "chunks_evaluation": []
+                    "ai_evaluation": ai_score
+                }
             }
             
-            # Then evaluate chunks separately
+            # Now get and evaluate chunks separately
+            cursor.execute("""
+                SELECT chunks FROM rag_responses WHERE ground_truth_id = ?
+            """, (ground_truth_id,))
+            chunks_row = cursor.fetchone()
+            chunks = json.loads(chunks_row[0]) if chunks_row and chunks_row[0] else []
+            
+            chunks_evaluation = []
             for chunk in chunks:
                 chunk_eval = {
                     "chunk": chunk,
@@ -81,10 +84,9 @@ class EvaluationManager:
                         chunk, ground_truth
                     )
                 }
-                results["chunks_evaluation"].append(chunk_eval)
+                chunks_evaluation.append(chunk_eval)
             
-            # Debug print for AI evaluation score
-            print(f"\nAI Evaluation Score: {results['response_evaluation']['ai_evaluation']}")
+            results["chunks_evaluation"] = chunks_evaluation
             
             # Store in database
             cursor.execute("""
