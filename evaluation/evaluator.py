@@ -43,6 +43,7 @@ class EvaluationManager:
             print(f"Ground Truth: {ground_truth[:100]}...")
             print(f"Response: {response[:100]}...")
             
+            # First evaluate the main response
             results = {
                 "response_evaluation": {
                     "relevance": await self.evaluator.calculate_relevance(
@@ -61,13 +62,15 @@ class EvaluationManager:
                         ground_truth, response
                     ),
                     "ai_evaluation": await self.evaluator.evaluate_response_with_ai(
-                        question, ground_truth, response
+                        question=question,
+                        ground_truth=ground_truth,
+                        response=response  # Pass the actual response, not chunks
                     )
                 },
                 "chunks_evaluation": []
             }
             
-            # Evaluate chunks
+            # Then evaluate chunks separately
             for chunk in chunks:
                 chunk_eval = {
                     "chunk": chunk,
